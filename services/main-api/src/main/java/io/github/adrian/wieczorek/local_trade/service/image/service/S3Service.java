@@ -14,7 +14,6 @@ import java.util.UUID;
 
 public interface S3Service {
     PutObjectRequest putObject(String bucketName, String key, @Nullable String content);
-    @Transactional
     ImageEntity uploadFile(UUID advertisementId, MultipartFile file) throws IOException;
     @Transactional
     void deleteFile(UUID imageId);
