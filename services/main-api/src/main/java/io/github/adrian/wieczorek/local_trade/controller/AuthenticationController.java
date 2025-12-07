@@ -12,11 +12,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -27,26 +27,53 @@ public class AuthenticationController {
     private final RefreshTokenService refreshTokenService;
     private final LoginFacade loginFacade;
 
+    @Value("${isCookieSecure}")
+    private boolean isCookieSecure;
+
 
     @PostMapping("/signup")
     public ResponseEntity<Void> register(@RequestBody @Valid RegisterUsersDto registerUserDto) {
         authenticationService.signup(registerUserDto);
         return ResponseEntity.ok().build();
     }
+
     @PostMapping("/login")
-    public LoginResponse authenticate(@RequestBody @Valid LoginDto loginUserDto) {
-        return loginFacade.authenticateAndAssignNewRefreshToken(loginUserDto);
+    public ResponseEntity<LoginResponse> authenticate(@RequestBody @Valid LoginDto loginUserDto) {
+        LoginResponse loginResponse = loginFacade.authenticateAndAssignNewRefreshToken(loginUserDto);
+        ResponseCookie jwtCookie = ResponseCookie.from("refreshToken",loginResponse.getRefreshToken())
+                .httpOnly(true)
+                .secure(isCookieSecure)
+                .path("/auth/refresh")
+                .maxAge(7*24*60*60)
+                .build();
+        loginResponse.setRefreshToken(null);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .body(loginResponse);
     }
 
     @PostMapping("/refreshToken")
     @Operation(summary = "Refresh token for users when jwt token expires")
-    public LoginResponse refreshToken(@RequestBody @Valid RefreshTokenRequest refreshTokenRequest) {
-        return refreshTokenService.generateNewTokenFromRefresh(refreshTokenRequest);
+    public ResponseEntity<LoginResponse> refreshToken(@CookieValue(name = "refreshToken") String refreshTokenFromCookie) {
+        RefreshTokenRequest refreshTokenRequest = new RefreshTokenRequest();
+        refreshTokenRequest.setToken(refreshTokenFromCookie);
+        return ResponseEntity.ok(refreshTokenService.generateNewTokenFromRefresh(refreshTokenRequest));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logOut(HttpServletRequest request,@RequestBody @Valid RefreshTokenRequest refreshTokenRequest) {
-        authenticationService.logout(request.getHeader("Authorization"),refreshTokenRequest.getToken());
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Void> logOut(HttpServletRequest request, @CookieValue(name = "refreshToken") String refreshToken) {
+
+        authenticationService.logout(request.getHeader("Authorization"), refreshToken);
+        ResponseCookie cleanCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(isCookieSecure)
+                .path("/auth/refresh")
+                .maxAge(0)
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cleanCookie.toString())
+                .build();
     }
 }
