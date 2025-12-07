@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -111,7 +113,6 @@ public class JwtTokenTests extends AbstractIntegrationTest {
         String brokenToken = token +"abc";
         assertThrows(SignatureException.class, () -> jwtService.isTokenValid(brokenToken, user));
     }
-
     @Test
     @Transactional
     public void jwtTokenIsExpired_thenJwtIsRefreshed() {
@@ -121,31 +122,55 @@ public class JwtTokenTests extends AbstractIntegrationTest {
         user.setEmail("test@test.com");
         user.setPassword(passwordEncoder.encode("password"));
         user.setRole("ROLE_USER");
-        System.out.println(user.getEmail());
-        System.out.println(user.getPassword());
-
         usersRepository.save(user);
 
         LoginDto dto = new LoginDto();
         dto.setEmail("test@test.com");
         dto.setPassword("password");
-        System.out.println(dto.getEmail());
-        System.out.println(dto.getPassword());
+
         String expiredToken = TestJwtUtils.generateTokenWithCustomExpiration(jwtService, user);
 
-        LoginResponse loginResponse = authenticationController.authenticate(dto);
-        String refreshToken = loginResponse.getRefreshToken();
+
+        ResponseEntity<LoginResponse> loginResponse = authenticationController.authenticate(dto);
+
+
+        String cookieHeader = loginResponse.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
+
+
+        assertNotNull(cookieHeader, "Cookie header should not be null");
+
+
+        String refreshToken = extractTokenFromCookie(cookieHeader);
+
         RefreshTokenRequest requestToken = new RefreshTokenRequest(refreshToken);
 
-        LoginResponse refreshTokenResponse = authenticationController.refreshToken(requestToken);
 
-        String refreshedToken = refreshTokenResponse.getToken();
+        LoginResponse refreshTokenResponseBody;
+
+        String stringRequestToken = requestToken.getToken();
+
+        refreshTokenResponseBody = authenticationController.refreshToken(stringRequestToken).getBody();
+
+        assertNotNull(refreshTokenResponseBody);
+        String refreshedToken = refreshTokenResponseBody.getToken();
 
 
         assertTrue(jwtService.isTokenValid(refreshedToken, user));
         assertNotEquals(expiredToken, refreshedToken);
-
     }
+
+    private String extractTokenFromCookie(String cookieHeader) {
+        if (cookieHeader == null) return null;
+
+        String[] cookies = cookieHeader.split(";");
+        for (String cookie : cookies) {
+            if (cookie.trim().startsWith("refreshToken" + "=")) {
+                return cookie.trim().substring(("refreshToken" + "=").length());
+            }
+        }
+        return null;
+    }
+
     @Test
     @Transactional
     public void getValidRoleFromToken_thenRolesAreValid() {

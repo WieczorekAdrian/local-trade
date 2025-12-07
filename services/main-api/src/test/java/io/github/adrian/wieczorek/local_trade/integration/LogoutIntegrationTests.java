@@ -16,6 +16,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.MinIOContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -47,6 +48,7 @@ public class LogoutIntegrationTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @Transactional
     void shouldBlacklistAccessTokenAfterLogout() throws Exception {
         RegisterUsersDto registerDto = new RegisterUsersDto();
         registerDto.setName("Jan");
@@ -59,29 +61,33 @@ public class LogoutIntegrationTests extends AbstractIntegrationTest {
                 .andExpect(status().isOk());
 
         LoginDto loginDto = new LoginDto("jan@test.pl", "Haslo123!");
-        String loginResponseJson = mockMvc.perform(post("/auth/login")
+
+        var loginResult = mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginDto)))
                 .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
+                .andReturn();
 
-        LoginResponse loginResponse = objectMapper.readValue(loginResponseJson, LoginResponse.class);
+        String responseBody = loginResult.getResponse().getContentAsString();
+        LoginResponse loginResponse = objectMapper.readValue(responseBody, LoginResponse.class);
         String accessToken = loginResponse.getToken();
-        String refreshToken = loginResponse.getRefreshToken();
 
+        // Wyciągamy Refresh Token z CIASTECZKA (MockHttpServletResponse)
+        var refreshTokenCookie = loginResult.getResponse().getCookie("refreshToken");
+
+        // Asercja dla pewności, że ciastko przyszło
+        if (refreshTokenCookie == null) {
+            throw new RuntimeException("Nie znaleziono ciasteczka refreshToken w odpowiedzi logowania!");
+        }
 
         mockMvc.perform(get("/favorite/me")
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk());
 
 
-        RefreshTokenRequest logoutRequest = new RefreshTokenRequest();
-        logoutRequest.setToken(refreshToken);
-
         mockMvc.perform(post("/auth/logout")
                         .header("Authorization", "Bearer " + accessToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(logoutRequest)))
+                        .cookie(refreshTokenCookie))
                 .andExpect(status().isOk());
 
 
