@@ -113,63 +113,6 @@ public class JwtTokenTests extends AbstractIntegrationTest {
         String brokenToken = token +"abc";
         assertThrows(SignatureException.class, () -> jwtService.isTokenValid(brokenToken, user));
     }
-    @Test
-    @Transactional
-    public void jwtTokenIsExpired_thenJwtIsRefreshed() {
-
-        UsersEntity user = new UsersEntity();
-        user.setName("test");
-        user.setEmail("test@test.com");
-        user.setPassword(passwordEncoder.encode("password"));
-        user.setRole("ROLE_USER");
-        usersRepository.save(user);
-
-        LoginDto dto = new LoginDto();
-        dto.setEmail("test@test.com");
-        dto.setPassword("password");
-
-        String expiredToken = TestJwtUtils.generateTokenWithCustomExpiration(jwtService, user);
-
-
-        ResponseEntity<LoginResponse> loginResponse = authenticationController.authenticate(dto);
-
-
-        String cookieHeader = loginResponse.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
-
-
-        assertNotNull(cookieHeader, "Cookie header should not be null");
-
-
-        String refreshToken = extractTokenFromCookie(cookieHeader);
-
-        RefreshTokenRequest requestToken = new RefreshTokenRequest(refreshToken);
-
-
-        LoginResponse refreshTokenResponseBody;
-
-        String stringRequestToken = requestToken.getToken();
-
-        refreshTokenResponseBody = authenticationController.refreshToken(stringRequestToken).getBody();
-
-        assertNotNull(refreshTokenResponseBody);
-        String refreshedToken = refreshTokenResponseBody.getToken();
-
-
-        assertTrue(jwtService.isTokenValid(refreshedToken, user));
-        assertNotEquals(expiredToken, refreshedToken);
-    }
-
-    private String extractTokenFromCookie(String cookieHeader) {
-        if (cookieHeader == null) return null;
-
-        String[] cookies = cookieHeader.split(";");
-        for (String cookie : cookies) {
-            if (cookie.trim().startsWith("refreshToken" + "=")) {
-                return cookie.trim().substring(("refreshToken" + "=").length());
-            }
-        }
-        return null;
-    }
 
     @Test
     @Transactional

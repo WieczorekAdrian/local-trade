@@ -16,12 +16,15 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.MinIOContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import jakarta.servlet.http.Cookie;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -50,6 +53,7 @@ public class LogoutIntegrationTests extends AbstractIntegrationTest {
     @Test
     @Transactional
     void shouldBlacklistAccessTokenAfterLogout() throws Exception {
+        // 1. Rejestracja
         RegisterUsersDto registerDto = new RegisterUsersDto();
         registerDto.setName("Jan");
         registerDto.setEmail("jan@test.pl");
@@ -62,34 +66,28 @@ public class LogoutIntegrationTests extends AbstractIntegrationTest {
 
         LoginDto loginDto = new LoginDto("jan@test.pl", "Haslo123!");
 
-        var loginResult = mockMvc.perform(post("/auth/login")
+        MvcResult loginResult = mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginDto)))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String responseBody = loginResult.getResponse().getContentAsString();
-        LoginResponse loginResponse = objectMapper.readValue(responseBody, LoginResponse.class);
-        String accessToken = loginResponse.getToken();
 
-        // Wyciągamy Refresh Token z CIASTECZKA (MockHttpServletResponse)
-        var refreshTokenCookie = loginResult.getResponse().getCookie("refreshToken");
+        Cookie accessTokenCookie = loginResult.getResponse().getCookie("accessToken");
+        assertNotNull(accessTokenCookie, "Ciasteczko 'token' nie zostało znalezione w odpowiedzi logowania.");
+        String accessToken = accessTokenCookie.getValue();
 
-        // Asercja dla pewności, że ciastko przyszło
-        if (refreshTokenCookie == null) {
-            throw new RuntimeException("Nie znaleziono ciasteczka refreshToken w odpowiedzi logowania!");
-        }
+        Cookie refreshTokenCookie = loginResult.getResponse().getCookie("refreshToken");
+        assertNotNull(refreshTokenCookie, "Ciasteczko 'refreshToken' nie zostało znalezione w odpowiedzi logowania.");
 
         mockMvc.perform(get("/favorite/me")
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk());
 
-
         mockMvc.perform(post("/auth/logout")
                         .header("Authorization", "Bearer " + accessToken)
                         .cookie(refreshTokenCookie))
                 .andExpect(status().isOk());
-
 
         mockMvc.perform(get("/favorite/me")
                         .header("Authorization", "Bearer " + accessToken))
