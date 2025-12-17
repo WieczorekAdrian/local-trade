@@ -73,26 +73,27 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     @Transactional
-    public void logout(String authHeader, String refreshToken) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.warn("Logout attempt without valid Bearer token");
-            return;
-        }
-            String jwt  = authHeader.substring(7);
-            String userEmail = jwtService.extractUsername(jwt);
+    public void logout(String accessToken, String refreshToken) {
+
+        if (accessToken != null) {
+            String userEmail = jwtService.extractUsername(accessToken);
             log.info("Processing logout attempt for user {}", userEmail);
 
-            refreshTokenService.revokeRefreshToken(refreshToken);
-
-            Date expiration = jwtService.extractExpiration(jwt);
+            Date expiration = jwtService.extractExpiration(accessToken);
             long now = System.currentTimeMillis();
             long ttlInSeconds = (expiration.getTime() - now) / 1000;
-        if (ttlInSeconds > 0) {
-            jwtBlacklistService.blacklistToken(jwt, ttlInSeconds);
-            log.info("Access token for user {} blacklisted for {} seconds", userEmail, ttlInSeconds);
+            if (ttlInSeconds > 0) {
+                jwtBlacklistService.blacklistToken(accessToken, ttlInSeconds);
+                log.info("Access token for user {} blacklisted for {} seconds", userEmail, ttlInSeconds);
+            }
         } else {
-            log.debug("Access token for user {} already expired, skipping blacklist", userEmail);
+            log.warn("No access token provided, skipping blacklist");
+        }
+
+        if (refreshToken != null) {
+            refreshTokenService.revokeRefreshToken(refreshToken);
         }
     }
+
 }
 

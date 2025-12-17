@@ -93,7 +93,7 @@ public class UsersFinderUnitTests {
     void getLoggedInUser_shouldReturnMappedDto_whenUserIsFound() {
 
         UsersEntity mockEntity =  UserUtils.createUserRoleUser();
-        UserDashboardResponseDto expectedDto = new UserDashboardResponseDto("test@test.com", 3, 2);
+        UserDashboardResponseDto expectedDto = new UserDashboardResponseDto("test@test.com", 3, 2,"ROLE_USER",UUID.randomUUID(),mockEntity.getName());
 
         when(usersRepository.findByEmail(mockEntity.getEmail())).thenReturn(Optional.of(mockEntity));
         when(userDashboardResponseMapper.toDto(mockEntity)).thenReturn(expectedDto);
