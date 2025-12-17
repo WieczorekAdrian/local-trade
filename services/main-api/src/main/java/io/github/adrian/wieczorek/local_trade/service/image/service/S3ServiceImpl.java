@@ -61,39 +61,55 @@ public class S3ServiceImpl implements S3Service {
 
         String fileName = UUID.randomUUID() + "." + FilenameUtils.getExtension(file.getOriginalFilename());
         String key = ad.getId() + "/full/" + fileName;
+
         byte[] thumbnail = generateThumbnail(file);
-        String thumbnailKey = ad.getId() + "/thumbnail/" + fileName;
+
+        String thumbnailKey = (thumbnail != null) ? ad.getId() + "/thumbnail/" + fileName : null;
 
         try {
-            PutObjectRequest thumbnailRequest = putObject(bucketName, thumbnailKey, null);
-            s3Client.putObject(thumbnailRequest, RequestBody.fromBytes(thumbnail));
+            if (thumbnail != null) {
+                PutObjectRequest thumbnailRequest = putObject(bucketName, thumbnailKey, "image/jpeg"); // Thumbnail to zawsze JPG u Ciebie
+                s3Client.putObject(thumbnailRequest, RequestBody.fromBytes(thumbnail));
+            }
 
             PutObjectRequest putObjectRequest = putObject(bucketName, key, file.getContentType());
             s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
+
         } catch (Exception e) {
+            if (thumbnailKey != null) silentDelete(thumbnailKey);
+            silentDelete(key);
             throw new RuntimeException("S3 Upload failed", e);
         }
+
         ImageEntity savedEntity;
+
         try {
-            savedEntity =  transactionTemplate.execute(status -> {
+            savedEntity = transactionTemplate.execute(status -> {
                 ImageEntity imageEntity = new ImageEntity();
                 imageEntity.setAdvertisementEntity(ad);
                 imageEntity.setKey(key);
                 imageEntity.setContentType(file.getContentType());
                 imageEntity.setSize(file.getSize());
+
                 imageEntity.setThumbnailKey(thumbnailKey);
                 imageEntity.setImageId(UUID.randomUUID());
 
-                return imageRepository.save(imageEntity);});
-        }catch (Exception dbException){
+                return imageRepository.save(imageEntity);
+            });
+        } catch (Exception dbException) {
             log.error("Database save failed. Rolling back transaction", dbException);
             silentDelete(key);
-            silentDelete(thumbnailKey);
+            if (thumbnailKey != null) {
+                silentDelete(thumbnailKey);
+            }
             throw dbException;
         }
+
         if (savedEntity != null) {
             savedEntity.setUrl(generatePresignedUrl(key, Duration.ofHours(1)));
-            savedEntity.setThumbnailUrl(generatePresignedUrl(thumbnailKey, Duration.ofHours(1)));
+            if (thumbnailKey != null) {
+                savedEntity.setThumbnailUrl(generatePresignedUrl(thumbnailKey, Duration.ofHours(1)));
+            }
         }
         return savedEntity;
     }
@@ -128,10 +144,13 @@ public class S3ServiceImpl implements S3Service {
         }
     }
 
-
     @Override
     public byte[] generateThumbnail(MultipartFile file) throws IOException {
         BufferedImage bufferedImage = ImageIO.read(file.getInputStream());
+        if (bufferedImage == null) {
+            log.warn("Uploaded file is not a valid image. Skipping thumbnail generation.");
+            return null;
+        }
         BufferedImage thumb = Scalr.resize(bufferedImage, 150);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         ImageIO.write(thumb, "jpg", os);
