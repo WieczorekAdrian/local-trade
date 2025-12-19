@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,7 +55,10 @@ public class AdvertisementFinderUnitTests {
         advertisementEntity.setAdvertisementId(UUID.randomUUID());
 
         var mockResponseDto = new ResponseAdvertisementDto(
+                LocalDateTime.now(),
                 advertisementEntity.getAdvertisementId(),
+                UUID.randomUUID(),
+                "randomemail@email.com",
                 advertisementEntity.getCategoryEntity().getId(),
                 advertisementEntity.getPrice(),
                 advertisementEntity.getTitle(),

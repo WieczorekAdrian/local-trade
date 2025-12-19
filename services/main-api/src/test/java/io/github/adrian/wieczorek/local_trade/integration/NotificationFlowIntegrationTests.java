@@ -72,7 +72,6 @@ public class NotificationFlowIntegrationTests extends AbstractIntegrationTest {
         verify(notificationEventPublisher, times(1))
                 .publishEvent(eventCaptor.capture(), routingKeyCaptor.capture());
 
-        // Sprawdź, CZYM został wywołany
         NotificationEvent capturedEvent = eventCaptor.getValue();
         assertEquals("AD_CREATED", capturedEvent.getEventType());
         assertEquals(randomUser.getUserId(), capturedEvent.getRecipientUserId());

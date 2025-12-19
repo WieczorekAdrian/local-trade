@@ -45,7 +45,9 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server /data --console-address ":9001"
     networks:
-      - local-trade-net
+      local-trade-net:
+          aliases:
+            - minio
     restart: unless-stopped
     env_file:
       - .env

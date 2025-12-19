@@ -8,6 +8,7 @@ import io.github.adrian.wieczorek.local_trade.service.advertisement.dto.RequestA
 import io.github.adrian.wieczorek.local_trade.service.advertisement.dto.ResponseAdvertisementDto;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.UUID;
@@ -70,6 +71,6 @@ public class AdUtils {
     }
 
     public static ResponseAdvertisementDto createResponseAdvertisementDto() {
-        return new ResponseAdvertisementDto(UUID.randomUUID(), 1, BigDecimal.valueOf(150), "test", "test", "test", true, "test",new ArrayList<>(), new ArrayList<>());
+        return new ResponseAdvertisementDto(LocalDateTime.now(),UUID.randomUUID(), UUID.randomUUID(),"randomemail@email.pl",1, BigDecimal.valueOf(150), "test", "test", "test", true, "test",new ArrayList<>(), new ArrayList<>());
     }
 }

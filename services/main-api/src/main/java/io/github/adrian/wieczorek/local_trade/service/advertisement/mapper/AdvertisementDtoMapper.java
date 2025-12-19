@@ -18,6 +18,8 @@ public interface AdvertisementDtoMapper {
     @Mapping(source = "categoryEntity", target = "categoryId", qualifiedByName = "categoryToId")
     @Mapping(source = "imageEntities", target = "imageUrls", qualifiedByName = "mapImagesToUrls")
     @Mapping(source = "imageEntities", target = "thumbnailUrls", qualifiedByName = "mapImagesToThumbnailUrls")
+    @Mapping(target = "sellerId", source = "user.userId")
+    @Mapping(target = "sellerEmail", source = "user.email")
     ResponseAdvertisementDto toResponseAdvertisementDto(AdvertisementEntity advertisementEntity);
 
     @Named("categoryToId")
