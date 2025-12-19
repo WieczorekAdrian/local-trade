@@ -6,6 +6,8 @@ import java.util.UUID;
 
 public record ResponseAdvertisementDto(
         UUID advertisementId,
+        UUID sellerId,
+        String sellerEmail,
         Integer categoryId,
         BigDecimal price,
         String title,

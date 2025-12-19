@@ -54,7 +54,7 @@ public class AdvertisementFilterUnitTests {
                 any(Pageable.class)
         )).thenReturn(new PageImpl<>(advertisementEntities));
         ResponseAdvertisementDto mockResponseDto = new ResponseAdvertisementDto(
-                UUID.randomUUID(), 1, BigDecimal.TEN, "Test Title", "img.jpg",
+                UUID.randomUUID(),UUID.randomUUID(),"testemail@email.pl", 1, BigDecimal.TEN, "Test Title", "img.jpg",
                 "Desc", true, "Location", List.of("url"), List.of("thumb"));
 
         when(advertisementDtoMapper.toResponseAdvertisementDto(any(AdvertisementEntity.class)))
@@ -79,7 +79,7 @@ public class AdvertisementFilterUnitTests {
         when(advertisementRepository.findAll(ArgumentMatchers.any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(advertisementEntities));
 
         ResponseAdvertisementDto mockResponseDto = new ResponseAdvertisementDto(
-                UUID.randomUUID(), categoryEntity.getId(), BigDecimal.TEN, "Test Title", "img.jpg",
+                UUID.randomUUID(),UUID.randomUUID(),"testemail@email.pl", categoryEntity.getId(), BigDecimal.TEN, "Test Title", "img.jpg",
                 "Desc", true, "Location", List.of("url"), List.of("thumb"));
 
         when(advertisementDtoMapper.toResponseAdvertisementDto(any(AdvertisementEntity.class)))

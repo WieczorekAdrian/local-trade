@@ -70,6 +70,8 @@ public class NewAdvertisementEntityFacadeUnitTests {
         SimpleAdvertisementResponseDto advertisementResponseDto = new SimpleAdvertisementResponseDto(advertisementEntity.getAdvertisementId(), advertisementEntity.getTitle());
         ResponseAdvertisementDto responseAdvertisementDto = new ResponseAdvertisementDto(
                 advertisementEntity.getAdvertisementId(),
+                advertisementEntity.getUser().getUserId(),
+                advertisementEntity.getUser().getEmail(),
                 advertisementEntity.getCategoryEntity().getId(),
                 advertisementEntity.getPrice(),
                 advertisementEntity.getTitle(),

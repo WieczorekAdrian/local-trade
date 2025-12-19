@@ -70,6 +70,6 @@ public class AdUtils {
     }
 
     public static ResponseAdvertisementDto createResponseAdvertisementDto() {
-        return new ResponseAdvertisementDto(UUID.randomUUID(), 1, BigDecimal.valueOf(150), "test", "test", "test", true, "test",new ArrayList<>(), new ArrayList<>());
+        return new ResponseAdvertisementDto(UUID.randomUUID(), UUID.randomUUID(),"randomemail@email.pl",1, BigDecimal.valueOf(150), "test", "test", "test", true, "test",new ArrayList<>(), new ArrayList<>());
     }
 }

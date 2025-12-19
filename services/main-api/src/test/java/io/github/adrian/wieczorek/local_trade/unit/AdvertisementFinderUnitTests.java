@@ -55,6 +55,8 @@ public class AdvertisementFinderUnitTests {
 
         var mockResponseDto = new ResponseAdvertisementDto(
                 advertisementEntity.getAdvertisementId(),
+                UUID.randomUUID(),
+                "randomemail@email.com",
                 advertisementEntity.getCategoryEntity().getId(),
                 advertisementEntity.getPrice(),
                 advertisementEntity.getTitle(),
