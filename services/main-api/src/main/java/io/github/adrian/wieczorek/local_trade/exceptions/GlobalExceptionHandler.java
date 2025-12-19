@@ -14,8 +14,10 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -102,6 +104,20 @@ public class GlobalExceptionHandler {
 
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "An internal server error occurred.");
         problemDetail.setTitle("Internal Server Error");
+        return problemDetail;
+    }
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ProblemDetail handleMaxUploadSize(MaxUploadSizeExceededException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.PAYLOAD_TOO_LARGE,
+                "Przesłane pliki są zbyt duże."
+        );
+
+        problemDetail.setTitle("Przekroczono limit wysyłania");
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("maxFileSize", "10MB");
+        problemDetail.setProperty("maxRequestSize", "50MB");
+
         return problemDetail;
     }
 }
