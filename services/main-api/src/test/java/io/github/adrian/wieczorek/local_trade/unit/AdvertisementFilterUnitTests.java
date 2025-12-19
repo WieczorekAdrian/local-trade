@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -53,7 +54,7 @@ public class AdvertisementFilterUnitTests {
                 ArgumentMatchers.<Specification<AdvertisementEntity>>any(),
                 any(Pageable.class)
         )).thenReturn(new PageImpl<>(advertisementEntities));
-        ResponseAdvertisementDto mockResponseDto = new ResponseAdvertisementDto(
+        ResponseAdvertisementDto mockResponseDto = new ResponseAdvertisementDto(LocalDateTime.now(),
                 UUID.randomUUID(),UUID.randomUUID(),"testemail@email.pl", 1, BigDecimal.TEN, "Test Title", "img.jpg",
                 "Desc", true, "Location", List.of("url"), List.of("thumb"));
 
@@ -76,9 +77,10 @@ public class AdvertisementFilterUnitTests {
                 .mapToObj(i->AdUtils.createAdvertisement())
                 .toList();
         Pageable pageable = PageRequest.of(0, 10);
+
         when(advertisementRepository.findAll(ArgumentMatchers.any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(advertisementEntities));
 
-        ResponseAdvertisementDto mockResponseDto = new ResponseAdvertisementDto(
+        ResponseAdvertisementDto mockResponseDto = new ResponseAdvertisementDto(LocalDateTime.now(),
                 UUID.randomUUID(),UUID.randomUUID(),"testemail@email.pl", categoryEntity.getId(), BigDecimal.TEN, "Test Title", "img.jpg",
                 "Desc", true, "Location", List.of("url"), List.of("thumb"));
 
@@ -108,5 +110,4 @@ public class AdvertisementFilterUnitTests {
         assertEquals(1, result.getTotalPages());
         assertTrue(result.getContent().stream().allMatch(ResponseAdvertisementDto::active));
     }
-
 }

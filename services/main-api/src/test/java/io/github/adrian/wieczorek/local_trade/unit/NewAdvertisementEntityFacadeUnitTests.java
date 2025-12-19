@@ -28,6 +28,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -69,6 +70,7 @@ public class NewAdvertisementEntityFacadeUnitTests {
         List<String> thumbnailUrls = advertisementEntity.getImageEntities().stream().map(ImageEntity::getThumbnailUrl).toList();
         SimpleAdvertisementResponseDto advertisementResponseDto = new SimpleAdvertisementResponseDto(advertisementEntity.getAdvertisementId(), advertisementEntity.getTitle());
         ResponseAdvertisementDto responseAdvertisementDto = new ResponseAdvertisementDto(
+                LocalDateTime.now(),
                 advertisementEntity.getAdvertisementId(),
                 advertisementEntity.getUser().getUserId(),
                 advertisementEntity.getUser().getEmail(),
