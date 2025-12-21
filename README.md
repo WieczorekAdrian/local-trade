@@ -11,6 +11,7 @@ It supports user listings, messaging, ratings, and media management — designed
 ## Tech Stack
 - **Java 17**
 - **Spring Boot** (REST API, WebSocket chat, validation)
+- **Frontend (In Development):** React, Vite, TypeScript
 - **PostgreSQL** – relational database
 - **RabbitMQ** – asynchronous message broker
 - **Azure Blob Storage** – **target cloud storage solution**
@@ -24,7 +25,7 @@ It supports user listings, messaging, ratings, and media management — designed
 
 
 ## Core Features
-- Advanced Security: Stateless JWT authentication implementing Refresh Token Rotation (prevents replay attacks) and Redis-based Blacklisting for immediate token revocation (True Logout).
+- Advanced Security: Implementation of stateless authentication using **Secure & HttpOnly Cookies** to store JWT tokens. This approach mitigates XSS attacks. Features include Refresh Token Rotation and Redis-based Blacklisting for immediate token revocation (True Logout).
 - S3/MinIO integration with automatic image thumbnail generation
 - "Add to favourites" and user listing tracking
 - Real-time chat using WebSockets
@@ -145,11 +146,11 @@ See the LICENSE file for details.
 
 ### Project Roadmap
 
+[IN PROGRESS] Frontend Development: Building a modern, responsive UI using React, Vite, and TypeScript.
+
 [IN PROGRESS] Dynamic Filters: Implementing a fully dynamic, category-specific filtering system (similar to OLX/Allegro) using JSONB attributes in the database.
 
 [IN PROGRESS] User Dashboard: Creating an aggregated BFF (Backend-for-Frontend) endpoint for the user dashboard.
-
-[IN PROGRESS] Notification System: The core microservice architecture is now implemented.
 
 [PLANNED] Adding user notification preferences.
 
@@ -157,11 +158,7 @@ See the LICENSE file for details.
 
 [PLANNED] **Full migration of the target production environment to the Azure platform (e.g., Azure App Service / AKS).**
 
-[PLANNED] **Replacing AWS S3 / MinIO with Azure Blob Storage to consolidate all services within a single cloud provider.**
-
 [PLANNED] AI-based Image Moderation: Integration with an external API for image moderation.
-
-[PLANNED] Frontend Integration: Full integration with a React/Next.js frontend.
 
 # Contributing to Local Trade Platform
 
