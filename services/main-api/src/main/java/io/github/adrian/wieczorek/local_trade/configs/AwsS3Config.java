@@ -38,7 +38,6 @@ public class AwsS3Config {
                     .endpointOverride(URI.create(minioEndpoint))
                     .region(Region.of("us-east-1"))
                     .credentialsProvider(StaticCredentialsProvider.create(
-                            // 2. ZMIENIONE: Użycie zmiennych
                             AwsBasicCredentials.create(minioAccessKey, minioSecretKey)
                     ))
                     .serviceConfiguration(S3Configuration.builder()
@@ -46,7 +45,6 @@ public class AwsS3Config {
                             .build())
                     .build();
         } else {
-            // Konfiguracja dla AWS
             return S3Client.builder()
                     .region(Region.of(awsRegion))
                     .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
