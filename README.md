@@ -160,6 +160,11 @@ See the LICENSE file for details.
 
 [PLANNED] AI-based Image Moderation: Integration with an external API for image moderation.
 
+[PLANNED] **Social-Marketplace Pivot:** Transitioning into a Social Commerce platform. 
+  - Implementation of a **Global Feed** combining advertisements with social posts.
+  - Enhanced User Profiles featuring professional history and social proof (LinkedIn-style).
+  - Advanced social interactions (likes, shares, following system).
+
 # Contributing to Local Trade Platform
 
 Hi! I'm happy you want to contribute. This is a portfolio project, but I treat it seriously.
