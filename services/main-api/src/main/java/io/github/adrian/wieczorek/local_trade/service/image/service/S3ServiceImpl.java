@@ -159,6 +159,10 @@ public class S3ServiceImpl implements S3Service {
 
     @Override
     public String generatePresignedUrl(String key, Duration duration) {
+        if (key == null || key.isBlank()) {
+            log.warn("Klucz obrazka jest pusty w bazie danych!");
+            return null;
+        }
         PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(
                 GetObjectPresignRequest.builder()
                         .getObjectRequest(GetObjectRequest.builder()

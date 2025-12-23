@@ -22,11 +22,11 @@ public class ImageEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "advertisementEntity_id", nullable = false)
     private AdvertisementEntity advertisementEntity;
-    @Column(length = 1024)
+    @Column(name = "\"key\"", length = 1024)
     private String key;
     @Column(length = 1024)
     private String url;
-    @Column(length = 1024)
+    @Column(name = "thumbnail_key", length = 1024)
     private String thumbnailKey;
     @Column(length = 1024)
     private String thumbnailUrl;

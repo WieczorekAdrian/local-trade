@@ -31,6 +31,9 @@ public class AwsS3Config {
     @Value("${aws.region:eu-central-1}")
     private String awsRegion;
 
+    @Value("${s3.presignerEndpoint}")
+    private String presignerEndpoint;
+
     @Bean
     public S3Client s3Client() {
         if (useMinio) {
@@ -38,7 +41,6 @@ public class AwsS3Config {
                     .endpointOverride(URI.create(minioEndpoint))
                     .region(Region.of("us-east-1"))
                     .credentialsProvider(StaticCredentialsProvider.create(
-                            // 2. ZMIENIONE: Użycie zmiennych
                             AwsBasicCredentials.create(minioAccessKey, minioSecretKey)
                     ))
                     .serviceConfiguration(S3Configuration.builder()
@@ -46,7 +48,6 @@ public class AwsS3Config {
                             .build())
                     .build();
         } else {
-            // Konfiguracja dla AWS
             return S3Client.builder()
                     .region(Region.of(awsRegion))
                     .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
@@ -58,7 +59,7 @@ public class AwsS3Config {
     public S3Presigner s3Presigner() {
         if (useMinio) {
             return S3Presigner.builder()
-                    .endpointOverride(URI.create(minioEndpoint))
+                    .endpointOverride(URI.create(presignerEndpoint))
                     .region(Region.of("us-east-1"))
                     .credentialsProvider(StaticCredentialsProvider.create(
                             AwsBasicCredentials.create(minioAccessKey, minioSecretKey)
