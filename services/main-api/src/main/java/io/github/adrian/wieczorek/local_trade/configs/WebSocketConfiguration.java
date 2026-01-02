@@ -1,5 +1,6 @@
 package io.github.adrian.wieczorek.local_trade.configs;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.messaging.simp.config.ChannelRegistration;
@@ -11,9 +12,13 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer {
-    private final UserChannelInterceptor userChannelInterceptor;
-    public WebSocketConfiguration(UserChannelInterceptor userChannelInterceptor) {
-        this.userChannelInterceptor = userChannelInterceptor;
+    private final CookieHandshakeInterceptor cookieHandshakeInterceptor;
+
+    @Value("${allowed.interceptor.origins}")
+    private String allowedInterceptorOrigins;
+
+    public WebSocketConfiguration(CookieHandshakeInterceptor cookieHandshakeInterceptor) {
+        this.cookieHandshakeInterceptor = cookieHandshakeInterceptor;
     }
 @Override
     public void configureMessageBroker(@NonNull MessageBrokerRegistry registry) {
@@ -22,15 +27,11 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
     registry.setUserDestinationPrefix("/user");
 }
 
-@Override
-    public void registerStompEndpoints(@NonNull StompEndpointRegistry registry) {
-    registry.addEndpoint("/ws");
-    registry.addEndpoint("/ws").setAllowedOrigins("*").withSockJS();
-}
     @Override
-    public void configureClientInboundChannel(ChannelRegistration registration) {
-        registration.interceptors(userChannelInterceptor);
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/ws")
+                .setAllowedOrigins(allowedInterceptorOrigins)
+                .addInterceptors(cookieHandshakeInterceptor)
+                .setHandshakeHandler(new CustomHandshakeHandler());
     }
-
-
 }

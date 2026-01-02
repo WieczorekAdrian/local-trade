@@ -66,7 +66,6 @@ public class AdvertisementFilterServiceImpl implements AdvertisementFilterServic
                     predicates.add(cb.equal(root.get("active"), filter.active()));
                 }
 
-
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }

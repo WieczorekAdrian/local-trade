@@ -1,6 +1,5 @@
 package io.github.adrian.wieczorek.local_trade.service.advertisement.service;
 
-import io.github.adrian.wieczorek.local_trade.service.advertisement.AdvertisementEntity;
 import io.github.adrian.wieczorek.local_trade.service.advertisement.AdvertisementRepository;
 import io.github.adrian.wieczorek.local_trade.service.advertisement.dto.ResponseAdvertisementDto;
 import io.github.adrian.wieczorek.local_trade.service.advertisement.dto.SimpleAdvertisementResponseDto;

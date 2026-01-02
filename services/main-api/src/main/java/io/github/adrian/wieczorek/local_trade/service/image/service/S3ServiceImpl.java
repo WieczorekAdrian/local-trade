@@ -1,20 +1,15 @@
 package io.github.adrian.wieczorek.local_trade.service.image.service;
 
 import io.github.adrian.wieczorek.local_trade.service.advertisement.service.AdvertisementService;
-import io.github.adrian.wieczorek.local_trade.service.image.dto.ImageDto;
-import io.github.adrian.wieczorek.local_trade.service.image.mapper.ImageMapper;
 import io.github.adrian.wieczorek.local_trade.service.advertisement.AdvertisementEntity;
 import io.github.adrian.wieczorek.local_trade.service.image.ImageEntity;
-import io.github.adrian.wieczorek.local_trade.service.advertisement.AdvertisementRepository;
 import io.github.adrian.wieczorek.local_trade.service.image.ImageRepository;
 import jakarta.annotation.Nullable;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.imgscalr.Scalr;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -29,7 +24,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -160,7 +154,7 @@ public class S3ServiceImpl implements S3Service {
     @Override
     public String generatePresignedUrl(String key, Duration duration) {
         if (key == null || key.isBlank()) {
-            log.warn("Klucz obrazka jest pusty w bazie danych!");
+            log.warn("Image key is null or blank");
             return null;
         }
         PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(
