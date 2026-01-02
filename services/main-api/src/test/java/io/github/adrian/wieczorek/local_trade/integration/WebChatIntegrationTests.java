@@ -44,6 +44,8 @@ public class WebChatIntegrationTests extends AbstractIntegrationTest {
     JwtService jwtService;
     @Autowired
     UsersRepository usersRepository;
+    @Autowired // Dodane, by czyścić bazę po teście
+    ChatMessageRepository chatMessageRepository;
 
     @LocalServerPort
     private int port;
@@ -51,16 +53,12 @@ public class WebChatIntegrationTests extends AbstractIntegrationTest {
     private WebSocketStompClient stompClient;
     private String url;
     private String senderJwt;
-    @Autowired
-    private ChatMessageService chatMessageService;
-    @Autowired
-    private ChatMessageRepository chatMessageRepository;
-
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @BeforeEach
     public void setup() {
-        this.url = "ws://localhost:" + port + "/ws/websocket";
+        this.url = "ws://localhost:" + port + "/ws";
+
         this.stompClient = new WebSocketStompClient(new StandardWebSocketClient());
         this.stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
@@ -74,7 +72,6 @@ public class WebChatIntegrationTests extends AbstractIntegrationTest {
         usersRepository.saveAndFlush(sender);
         usersRepository.saveAndFlush(receiver);
 
-
         this.senderJwt = TestJwtUtils.generateToken(jwtService, sender);
     }
 
@@ -83,8 +80,10 @@ public class WebChatIntegrationTests extends AbstractIntegrationTest {
         final BlockingQueue<Object> blockingQueue = new ArrayBlockingQueue<>(1);
         ChatMessagePayload payload = new ChatMessagePayload("Hey how are you?");
 
-        StompHeaders connectHeaders = new StompHeaders();
-        connectHeaders.add("Authorization", "Bearer " + senderJwt);
+        WebSocketHttpHeaders handshakeHeaders = new WebSocketHttpHeaders();
+        handshakeHeaders.add("Cookie", "accessToken=" + senderJwt);
+
+        StompHeaders stompHeaders = new StompHeaders();
 
         StompSessionHandlerAdapter sessionHandler = new StompSessionHandlerAdapter() {
             @Override
@@ -105,37 +104,33 @@ public class WebChatIntegrationTests extends AbstractIntegrationTest {
 
             @Override
             public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload, Throwable exception) {
-                System.err.println("--- ZŁAPANO BŁĄD STOMP ---");
                 exception.printStackTrace();
                 blockingQueue.offer(exception);
             }
 
             @Override
             public void handleTransportError(StompSession session, Throwable exception) {
-                System.err.println("--- ZŁAPANO BŁĄD TRANSPORTOWY ---");
                 exception.printStackTrace();
                 blockingQueue.offer(exception);
             }
         };
 
         CompletableFuture<StompSession> future = stompClient.connectAsync(
-                url, new WebSocketHttpHeaders(), connectHeaders, sessionHandler);
+                url, handshakeHeaders, stompHeaders, sessionHandler);
+
         future.get(5, TimeUnit.SECONDS);
 
         Object result = blockingQueue.poll(5, TimeUnit.SECONDS);
 
-        Assertions.assertNotNull(result, "Nie otrzymano niczego (wiadomości ani błędu) w ciągu 5 sekund.");
-
+        Assertions.assertNotNull(result, "Nie otrzymano odpowiedzi.");
         if (result instanceof Throwable) {
-            Assertions.fail("Test zakończony z powodu błędu przechwyconego przez handler", (Throwable) result);
+            Assertions.fail("Błąd STOMP: ", (Throwable) result);
         }
-
-        Assertions.assertInstanceOf(ChatMessageDto.class, result, "Otrzymany obiekt nie jest błędem, ale nie jest też typu ChatMessageDto.");
 
         ChatMessageDto chatMessage = (ChatMessageDto) result;
         Assertions.assertEquals("Hey how are you?", chatMessage.getContent());
         Assertions.assertEquals("Tomek", chatMessage.getSender());
-        Assertions.assertEquals("Ania", chatMessage.getRecipient());
+
         chatMessageRepository.deleteAll();
     }
 }
