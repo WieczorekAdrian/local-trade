@@ -145,9 +145,17 @@ public class S3ServiceImpl implements S3Service {
             log.warn("Uploaded file is not a valid image. Skipping thumbnail generation.");
             return null;
         }
-        BufferedImage thumb = Scalr.resize(bufferedImage, 150);
+
+        BufferedImage thumb = Scalr.resize(bufferedImage,
+                Scalr.Method.QUALITY,
+                Scalr.Mode.AUTOMATIC,
+                600,
+                Scalr.OP_ANTIALIAS);
+
         ByteArrayOutputStream os = new ByteArrayOutputStream();
+
         ImageIO.write(thumb, "jpg", os);
+
         return os.toByteArray();
     }
 
