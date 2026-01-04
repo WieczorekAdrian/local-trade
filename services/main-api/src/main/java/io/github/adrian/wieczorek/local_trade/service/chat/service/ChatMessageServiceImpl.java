@@ -105,4 +105,5 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
         return chatSummaryDtoMapper.toUnreadCountDto(count);
     }
+
 }
