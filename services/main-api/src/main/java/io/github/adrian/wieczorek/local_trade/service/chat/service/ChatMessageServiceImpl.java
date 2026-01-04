@@ -33,6 +33,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         chatMessageEntity.setTimestamp(LocalDateTime.now());
         return chatMessageRepository.save(chatMessageEntity);
     }
+
     @Transactional
     @Override
     public ChatMessageDto createAndSaveMessageForPrivateUser(ChatMessagePayload chatMessage, Principal principal, String recipientEmail) {
@@ -43,22 +44,35 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                 .recipient(user1)
                 .content(chatMessage.content())
                 .build();
-        ChatMessageDto dto = new ChatMessageDto(newChatMessageEntity);
-      chatMessageRepository.save(newChatMessageEntity);
-      return dto;
+        ChatMessageEntity savedEntity = chatMessageRepository.save(newChatMessageEntity);
+        return new ChatMessageDto(savedEntity);
     }
 
     @Transactional(readOnly = true)
     @Override
-    public List<ChatMessageEntity> getChatHistory(UserDetails sender, String recipientUsername) {
+    public List<ChatMessageDto> getChatHistory(UserDetails sender, String recipientUsername) {
         UsersEntity user1 = usersService.getCurrentUser(sender.getUsername());
         UsersEntity user2 = usersService.getCurrentUser(recipientUsername);
+
         List<ChatMessageEntity> history1 = chatMessageRepository.findBySenderAndRecipient(user1, user2);
         List<ChatMessageEntity> history2 = chatMessageRepository.findBySenderAndRecipient(user2, user1);
+
         List<ChatMessageEntity> fullHistory = new ArrayList<>();
         fullHistory.addAll(history1);
         fullHistory.addAll(history2);
+
         fullHistory.sort(Comparator.comparing(ChatMessageEntity::getTimestamp));
-        return fullHistory;
+
+        return fullHistory.stream()
+                .map(ChatMessageDto::new)
+                .toList();
+    }
+
+    @Override
+    public void markMessagesAsRead(String senderEmail, String recipientEmail) {
+        UsersEntity sender = usersService.getCurrentUser(senderEmail);
+        UsersEntity recipient = usersService.getCurrentUser(recipientEmail);
+
+        chatMessageRepository.markAllAsRead(sender,recipient);
     }
 }

@@ -96,40 +96,45 @@ public class ChatMessageUnitTests {
 
     @Test
     public void whenPullingMessageHistory_thenReturnChatMessageHistory() {
+        // 1. Przygotowanie danych (Encyjne obiekty bazy danych)
         UsersEntity user1 = UserUtils.createUserRoleUser();
+        user1.setName("Adrian"); // Ustawiamy imię, bo DTO go używa
+
         UsersEntity user2 = UserUtils.createUserRoleUser();
-        List<ChatMessageEntity> chatHistory = new ArrayList<>();
-        List<ChatMessageEntity> chatHistory2 = new ArrayList<>();
-        ChatMessageEntity messageFromSender = ChatMessageEntity.builder()
-                .recipient(user1)
+        user2.setName("Kupiec");
+
+        ChatMessageEntity messageEntity1 = ChatMessageEntity.builder()
                 .sender(user2)
+                .recipient(user1)
                 .content("Hey its me!")
                 .timestamp(LocalDateTime.now().minusMinutes(5))
                 .build();
-        ChatMessageEntity messageFromRecipient = ChatMessageEntity.builder()
-                .recipient(user2)
+
+        ChatMessageEntity messageEntity2 = ChatMessageEntity.builder()
                 .sender(user1)
-                .content("Do you want my car ?")
+                .recipient(user2)
+                .content("Do you want my car?")
                 .timestamp(LocalDateTime.now().minusMinutes(4))
                 .build();
 
-        chatHistory.add(messageFromSender);
-        chatHistory2.add(messageFromRecipient);
         UserDetails userDetails = Mockito.mock(UserDetails.class);
         when(userDetails.getUsername()).thenReturn(user1.getUsername());
-       when(usersService.getCurrentUser(userDetails.getUsername())).thenReturn(user1);
+        when(usersService.getCurrentUser(user1.getUsername())).thenReturn(user1);
         when(usersService.getCurrentUser(user2.getName())).thenReturn(user2);
 
-        when(chatMessageRepository.findBySenderAndRecipient(user1, user2)).thenReturn(chatHistory);
-        when(chatMessageRepository.findBySenderAndRecipient(user2, user1)).thenReturn(chatHistory2);
+        when(chatMessageRepository.findBySenderAndRecipient(user1, user2)).thenReturn(List.of(messageEntity2));
+        when(chatMessageRepository.findBySenderAndRecipient(user2, user1)).thenReturn(List.of(messageEntity1));
 
-        List<ChatMessageEntity> result = chatMessageService.getChatHistory(userDetails,user2.getName());
+        List<ChatMessageDto> result = chatMessageService.getChatHistory(userDetails, user2.getName());
 
         Assertions.assertNotNull(result);
         Assertions.assertEquals(2, result.size());
-        Assertions.assertEquals("Hey its me!",result.get(0).getContent());
-        Assertions.assertEquals("Do you want my car ?",result.get(1).getContent());
 
+        Assertions.assertEquals("Hey its me!", result.get(0).getContent());
+        Assertions.assertEquals("Kupiec", result.get(0).getSender());
+
+        Assertions.assertEquals("Do you want my car?", result.get(1).getContent());
+        Assertions.assertEquals("Adrian", result.get(1).getSender());
     }
 
     @Test
@@ -147,4 +152,25 @@ public class ChatMessageUnitTests {
 
         Assertions.assertThrows(UserNotFoundException.class, () -> chatMessageService.getChatHistory(userDetails,user2.getName()));
     }
+    @Test
+    public void shouldInvokeRepositoryToMarkMessagesAsRead() {
+            String senderEmail = "sender@test.pl";
+            String recipientEmail = "recipient@test.pl";
+
+            UsersEntity sender = new UsersEntity();
+            sender.setEmail(senderEmail);
+
+            UsersEntity recipient = new UsersEntity();
+            recipient.setEmail(recipientEmail);
+
+            when(usersService.getCurrentUser(senderEmail)).thenReturn(sender);
+            when(usersService.getCurrentUser(recipientEmail)).thenReturn(recipient);
+
+            chatMessageService.markMessagesAsRead(senderEmail, recipientEmail);
+
+            verify(usersService, times(1)).getCurrentUser(senderEmail);
+            verify(usersService, times(1)).getCurrentUser(recipientEmail);
+
+            verify(chatMessageRepository, times(1)).markAllAsRead(sender, recipient);
+        }
 }

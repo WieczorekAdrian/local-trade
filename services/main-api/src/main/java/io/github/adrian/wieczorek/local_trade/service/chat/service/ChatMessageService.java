@@ -17,5 +17,8 @@ public interface ChatMessageService {
     ChatMessageDto createAndSaveMessageForPrivateUser(ChatMessagePayload chatMessage, Principal principal, String recipientEmail);
 
     @Transactional(readOnly = true)
-    List<ChatMessageEntity> getChatHistory(UserDetails sender, String recipientUsername);
+    List<ChatMessageDto> getChatHistory(UserDetails sender, String recipientUsername);
+
+    @Transactional
+    void markMessagesAsRead(String senderEmail, String recipientEmail);
 }
