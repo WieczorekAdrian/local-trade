@@ -1,5 +1,6 @@
 package io.github.adrian.wieczorek.local_trade.service.chat;
 
+import io.github.adrian.wieczorek.local_trade.service.advertisement.AdvertisementEntity;
 import io.github.adrian.wieczorek.local_trade.service.user.UsersEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -25,8 +26,15 @@ public class ChatMessageEntity {
     @ManyToOne
     @JoinColumn(name = "recipient_id", nullable = false)
     private UsersEntity recipient;
+
     private String content;
     private LocalDateTime timestamp;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "advertisement_id")
+    private AdvertisementEntity advertisement;
+
+    private boolean isRead =  false;
 
     @PrePersist
     protected void onCreate() {

@@ -42,11 +42,6 @@ public class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
     @Transactional
     @Test
     void whenSavingUser_thenUserSavedCorrectly() {
-        chatMessageRepository.deleteAll();
-        usersRepository.deleteAll();
-
-
-
         long countBefore = usersRepository.count();
         assertEquals(0, countBefore, "No users should be present before the test");
 

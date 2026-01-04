@@ -1,5 +1,6 @@
 package io.github.adrian.wieczorek.local_trade.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatMessageDto;
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatMessagePayload;
 import io.github.adrian.wieczorek.local_trade.service.user.UsersEntity;
@@ -44,7 +45,7 @@ public class WebChatIntegrationTests extends AbstractIntegrationTest {
     JwtService jwtService;
     @Autowired
     UsersRepository usersRepository;
-    @Autowired // Dodane, by czyścić bazę po teście
+    @Autowired
     ChatMessageRepository chatMessageRepository;
 
     @LocalServerPort
@@ -53,6 +54,9 @@ public class WebChatIntegrationTests extends AbstractIntegrationTest {
     private WebSocketStompClient stompClient;
     private String url;
     private String senderJwt;
+    @Autowired
+    private ObjectMapper objectMapper;
+
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @BeforeEach
@@ -60,7 +64,9 @@ public class WebChatIntegrationTests extends AbstractIntegrationTest {
         this.url = "ws://localhost:" + port + "/ws";
 
         this.stompClient = new WebSocketStompClient(new StandardWebSocketClient());
-        this.stompClient.setMessageConverter(new MappingJackson2MessageConverter());
+        MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
+        converter.setObjectMapper(objectMapper);
+        this.stompClient.setMessageConverter(converter);
 
         UsersEntity sender = UserUtils.createUserRoleUser();
         UsersEntity receiver = UserUtils.createUserRoleUser();
