@@ -3,6 +3,8 @@ package io.github.adrian.wieczorek.local_trade.service.chat.service;
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatMessageDto;
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatMessagePayload;
 import io.github.adrian.wieczorek.local_trade.service.chat.ChatMessageEntity;
+import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatSummaryDto;
+import io.github.adrian.wieczorek.local_trade.service.chat.dto.UnreadCountDto;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,4 +23,9 @@ public interface ChatMessageService {
 
     @Transactional
     void markMessagesAsRead(String senderEmail, String recipientEmail);
+
+    @Transactional(readOnly = true)
+    List<ChatSummaryDto> getInbox(String userEmail);
+    @Transactional(readOnly = true)
+    UnreadCountDto getTotalUnreadCount(String userEmail);
 }

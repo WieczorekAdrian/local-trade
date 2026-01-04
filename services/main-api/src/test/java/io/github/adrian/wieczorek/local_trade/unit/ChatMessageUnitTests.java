@@ -4,6 +4,7 @@ import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatMessageDto;
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatMessagePayload;
 import io.github.adrian.wieczorek.local_trade.exceptions.UserNotFoundException;
 import io.github.adrian.wieczorek.local_trade.service.chat.ChatMessageEntity;
+import io.github.adrian.wieczorek.local_trade.service.chat.mappers.ChatSummaryDtoMapper;
 import io.github.adrian.wieczorek.local_trade.service.user.UsersEntity;
 import io.github.adrian.wieczorek.local_trade.service.chat.ChatMessageRepository;
 import io.github.adrian.wieczorek.local_trade.service.user.UsersRepository;
@@ -11,6 +12,7 @@ import io.github.adrian.wieczorek.local_trade.service.chat.service.ChatMessageSe
 import io.github.adrian.wieczorek.local_trade.service.user.service.UsersService;
 import io.github.adrian.wieczorek.local_trade.testutils.UserUtils;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -36,6 +38,8 @@ public class ChatMessageUnitTests {
     ChatMessageServiceImpl chatMessageService;
     @Mock
     UsersService usersService;
+    @Mock
+    ChatSummaryDtoMapper chatSummaryDtoMapper;
 
     @Test
     public void whenSearchingForRecipientAndSenderAndSendingMessage_thenReturnChatMessage() {
@@ -96,9 +100,8 @@ public class ChatMessageUnitTests {
 
     @Test
     public void whenPullingMessageHistory_thenReturnChatMessageHistory() {
-        // 1. Przygotowanie danych (Encyjne obiekty bazy danych)
         UsersEntity user1 = UserUtils.createUserRoleUser();
-        user1.setName("Adrian"); // Ustawiamy imię, bo DTO go używa
+        user1.setName("Adrian");
 
         UsersEntity user2 = UserUtils.createUserRoleUser();
         user2.setName("Kupiec");
@@ -173,4 +176,23 @@ public class ChatMessageUnitTests {
 
             verify(chatMessageRepository, times(1)).markAllAsRead(sender, recipient);
         }
+    @Test
+    @DisplayName("Should correctly identify partner and map to Inbox DTO")
+    void shouldReturnCorrectInbox() {
+
+        UsersEntity me = UserUtils.createUserRoleUser();
+        UsersEntity partner = UserUtils.createUserRoleUser();
+
+        ChatMessageEntity lastMsg = ChatMessageEntity.builder()
+                .sender(me).recipient(partner).content("Hej!").build();
+
+
+        when(usersService.getCurrentUser(me.getEmail())).thenReturn(me);
+        when(chatMessageRepository.findLastMessagesPerConversation(me)).thenReturn(List.of(lastMsg));
+        when(chatMessageRepository.countUnreadFromPartner(partner, me)).thenReturn(2L);
+
+        chatMessageService.getInbox(me.getEmail());
+
+        verify(chatSummaryDtoMapper).toChatSummaryDto(lastMsg, partner, 2L);
+    }
 }

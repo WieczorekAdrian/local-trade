@@ -1,6 +1,8 @@
 package io.github.adrian.wieczorek.local_trade.controller;
 
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatMessageDto;
+import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatSummaryDto;
+import io.github.adrian.wieczorek.local_trade.service.chat.dto.UnreadCountDto;
 import io.github.adrian.wieczorek.local_trade.service.chat.service.ChatMessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,5 +33,18 @@ public class WebChatRestController {
             @PathVariable String senderEmail) {
         chatMessageService.markMessagesAsRead(senderEmail, userDetails.getUsername());
         return ResponseEntity.ok().build();
+    }
+    @GetMapping("/inbox")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<ChatSummaryDto>> getInbox(@AuthenticationPrincipal UserDetails userDetails) {
+        String userEmail =  userDetails.getUsername();
+        return ResponseEntity.ok(chatMessageService.getInbox(userEmail));
+    }
+
+    @GetMapping("/unread-total")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UnreadCountDto> getTotalUnread(@AuthenticationPrincipal UserDetails userDetails) {
+        String userEmail = userDetails.getUsername();
+        return ResponseEntity.ok(chatMessageService.getTotalUnreadCount(userEmail));
     }
 }
