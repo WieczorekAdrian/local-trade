@@ -20,8 +20,7 @@ It supports user listings, messaging, ratings, and media management — designed
 - **Testcontainers** – integration testing environment  
 - **Maven** – build and dependency management  
 - **Docker & Docker Compose** – containerized deployment  
-- **GitHub Actions** – CI/CD pipeline  
-- **Sentry** – error monitoring and observability  
+- **GitHub Actions** – CI/CD pipeline
 
 
 ## Core Features
