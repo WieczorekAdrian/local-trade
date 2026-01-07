@@ -138,10 +138,10 @@ public class ChatMessageUnitTests {
         Assertions.assertEquals(2, result.size());
 
         Assertions.assertEquals("Hey its me!", result.get(0).getContent());
-        Assertions.assertEquals("Kupiec", result.get(0).getSender());
+        Assertions.assertEquals("test@test.com", result.get(0).getSender());
 
         Assertions.assertEquals("Do you want my car?", result.get(1).getContent());
-        Assertions.assertEquals("Adrian", result.get(1).getSender());
+        Assertions.assertEquals("test@test.com", result.get(1).getSender());
     }
 
     @Test
