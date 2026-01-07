@@ -21,8 +21,8 @@ public class ChatMessageDto {
 
     public ChatMessageDto(ChatMessageEntity entity) {
         this.content = entity.getContent();
-        this.sender = entity.getSender().getName();
-        this.recipient = entity.getRecipient().getName();
+        this.sender = entity.getSender().getEmail();
+        this.recipient = entity.getRecipient().getEmail();
         this.timestamp = entity.getTimestamp();
         this.isRead = entity.isRead();
     }

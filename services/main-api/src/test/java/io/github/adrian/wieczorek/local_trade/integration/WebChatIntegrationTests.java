@@ -135,7 +135,7 @@ public class WebChatIntegrationTests extends AbstractIntegrationTest {
 
         ChatMessageDto chatMessage = (ChatMessageDto) result;
         Assertions.assertEquals("Hey how are you?", chatMessage.getContent());
-        Assertions.assertEquals("Tomek", chatMessage.getSender());
+        Assertions.assertEquals("Tomek@wp.pl", chatMessage.getSender());
 
         chatMessageRepository.deleteAll();
     }

@@ -58,14 +58,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         UsersEntity user1 = usersService.getCurrentUser(sender.getUsername());
         UsersEntity user2 = usersService.getCurrentUser(recipientUsername);
 
-        List<ChatMessageEntity> history1 = chatMessageRepository.findBySenderAndRecipient(user1, user2);
-        List<ChatMessageEntity> history2 = chatMessageRepository.findBySenderAndRecipient(user2, user1);
-
-        List<ChatMessageEntity> fullHistory = new ArrayList<>();
-        fullHistory.addAll(history1);
-        fullHistory.addAll(history2);
-
-        fullHistory.sort(Comparator.comparing(ChatMessageEntity::getTimestamp));
+        List<ChatMessageEntity> fullHistory = chatMessageRepository.findBySenderAndRecipient(user1, user2);
 
         return fullHistory.stream()
                 .map(ChatMessageDto::new)
@@ -105,4 +98,5 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
         return chatSummaryDtoMapper.toUnreadCountDto(count);
     }
+
 }

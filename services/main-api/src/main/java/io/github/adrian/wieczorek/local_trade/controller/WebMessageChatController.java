@@ -3,6 +3,7 @@ package io.github.adrian.wieczorek.local_trade.controller;
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatMessageDto;
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatMessagePayload;
 import io.github.adrian.wieczorek.local_trade.service.chat.ChatMessageEntity;
+import io.github.adrian.wieczorek.local_trade.service.chat.dto.TypingDto;
 import io.github.adrian.wieczorek.local_trade.service.chat.service.ChatMessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
+import java.util.Locale;
 
 
 @Controller
@@ -30,6 +32,13 @@ public class WebMessageChatController {
         chatMessageService.save(chatMessageEntity);
         return chatMessageEntity;
     }
+
+    @MessageMapping("/chat.typing/{recipientEmail}")
+    public void handleTyping(@DestinationVariable String recipientEmail, @Payload TypingDto input, Principal principal) {
+        TypingDto status = new TypingDto(principal.getName(), input.isTyping());
+        simpMessagingTemplate.convertAndSendToUser(recipientEmail.toLowerCase(), "/queue/typing", status);
+    }
+
     @MessageMapping("/chat.sendMessage.private/{recipient}")
     @Operation(summary = "Take logged in user and send recipient Username to send message")
     public void sendPrivateMessage(@Payload ChatMessagePayload chatMessage, @DestinationVariable("recipient") String recipient, @AuthenticationPrincipal Principal principal) {
