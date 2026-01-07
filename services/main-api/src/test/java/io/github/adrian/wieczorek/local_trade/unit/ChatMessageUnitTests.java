@@ -106,9 +106,11 @@ public class ChatMessageUnitTests {
     public void whenPullingMessageHistory_thenReturnChatMessageHistory() {
         UsersEntity user1 = UserUtils.createUserRoleUser();
         user1.setName("Adrian");
+        user1.setEmail("adrian@test.pl");
 
         UsersEntity user2 = UserUtils.createUserRoleUser();
         user2.setName("Kupiec");
+        user2.setEmail("kupiec@test.pl");
 
         ChatMessageEntity messageEntity1 = ChatMessageEntity.builder()
                 .sender(user2)
@@ -126,11 +128,14 @@ public class ChatMessageUnitTests {
 
         UserDetails userDetails = Mockito.mock(UserDetails.class);
         when(userDetails.getUsername()).thenReturn(user1.getUsername());
+
         when(usersService.getCurrentUser(user1.getUsername())).thenReturn(user1);
         when(usersService.getCurrentUser(user2.getName())).thenReturn(user2);
 
-        when(chatMessageRepository.findBySenderAndRecipient(user1, user2)).thenReturn(List.of(messageEntity2));
-        when(chatMessageRepository.findBySenderAndRecipient(user2, user1)).thenReturn(List.of(messageEntity1));
+        List<ChatMessageEntity> conversationFromDb = List.of(messageEntity1, messageEntity2);
+
+        when(chatMessageRepository.findBySenderAndRecipient(user1, user2))
+                .thenReturn(conversationFromDb);
 
         List<ChatMessageDto> result = chatMessageService.getChatHistory(userDetails, user2.getName());
 
@@ -138,10 +143,10 @@ public class ChatMessageUnitTests {
         Assertions.assertEquals(2, result.size());
 
         Assertions.assertEquals("Hey its me!", result.get(0).getContent());
-        Assertions.assertEquals("test@test.com", result.get(0).getSender());
+        Assertions.assertEquals(user2.getEmail(), result.get(0).getSender());
 
         Assertions.assertEquals("Do you want my car?", result.get(1).getContent());
-        Assertions.assertEquals("test@test.com", result.get(1).getSender());
+        Assertions.assertEquals(user1.getEmail(), result.get(1).getSender());
     }
 
     @Test

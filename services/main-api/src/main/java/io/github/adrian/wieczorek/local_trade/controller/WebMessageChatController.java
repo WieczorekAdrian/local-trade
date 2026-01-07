@@ -3,6 +3,7 @@ package io.github.adrian.wieczorek.local_trade.controller;
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatMessageDto;
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatMessagePayload;
 import io.github.adrian.wieczorek.local_trade.service.chat.ChatMessageEntity;
+import io.github.adrian.wieczorek.local_trade.service.chat.dto.TypingDto;
 import io.github.adrian.wieczorek.local_trade.service.chat.service.ChatMessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,13 @@ public class WebMessageChatController {
         chatMessageService.save(chatMessageEntity);
         return chatMessageEntity;
     }
+
+    @MessageMapping("/chat.typing/{recipient}")
+    public void handleTyping(@DestinationVariable String recipient, @Payload boolean isTyping, Principal principal) {
+        TypingDto status = new TypingDto(principal.getName(), isTyping);
+        simpMessagingTemplate.convertAndSendToUser(recipient, "/queue/typing", status);
+    }
+
     @MessageMapping("/chat.sendMessage.private/{recipient}")
     @Operation(summary = "Take logged in user and send recipient Username to send message")
     public void sendPrivateMessage(@Payload ChatMessagePayload chatMessage, @DestinationVariable("recipient") String recipient, @AuthenticationPrincipal Principal principal) {
