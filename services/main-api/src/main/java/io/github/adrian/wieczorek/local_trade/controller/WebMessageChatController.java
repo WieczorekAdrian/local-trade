@@ -16,6 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
+import java.util.Locale;
 
 
 @Controller
@@ -32,10 +33,10 @@ public class WebMessageChatController {
         return chatMessageEntity;
     }
 
-    @MessageMapping("/chat.typing/{recipient}")
-    public void handleTyping(@DestinationVariable String recipient, @Payload boolean isTyping, Principal principal) {
-        TypingDto status = new TypingDto(principal.getName(), isTyping);
-        simpMessagingTemplate.convertAndSendToUser(recipient, "/queue/typing", status);
+    @MessageMapping("/chat.typing/{recipientEmail}")
+    public void handleTyping(@DestinationVariable String recipientEmail, @Payload TypingDto input, Principal principal) {
+        TypingDto status = new TypingDto(principal.getName(), input.isTyping());
+        simpMessagingTemplate.convertAndSendToUser(recipientEmail.toLowerCase(), "/queue/typing", status);
     }
 
     @MessageMapping("/chat.sendMessage.private/{recipient}")
