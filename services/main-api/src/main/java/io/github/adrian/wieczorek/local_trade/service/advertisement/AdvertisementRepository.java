@@ -5,7 +5,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,4 +24,9 @@ public interface AdvertisementRepository extends JpaRepository<AdvertisementEnti
     long countByCategoryEntityId(Integer categoryId);
     AdvertisementEntity findByUser(UsersEntity user);
     AdvertisementEntity findByTitle(String title);
+
+    @Modifying(clearAutomatically = true)
+    @Transactional
+    @Query(value = "UPDATE advertisement_entity SET active = false WHERE active = true AND created_at < :cutoffDate", nativeQuery = true)
+    int deactivateExpiredAds(@Param("cutoffDate") LocalDateTime cutoffDate);
 }

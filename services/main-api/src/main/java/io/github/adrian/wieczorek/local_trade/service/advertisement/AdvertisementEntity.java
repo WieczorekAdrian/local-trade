@@ -61,6 +61,7 @@ public class AdvertisementEntity {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     private boolean active = true;
     @ManyToOne(fetch = FetchType.LAZY) // wielu ads -> 1 user
     @JoinColumn(name = "user_id", nullable = false)
