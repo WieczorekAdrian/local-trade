@@ -25,8 +25,8 @@ public interface AdvertisementRepository extends JpaRepository<AdvertisementEnti
     AdvertisementEntity findByUser(UsersEntity user);
     AdvertisementEntity findByTitle(String title);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Transactional
-    @Query("UPDATE AdvertisementEntity a SET a.active = false WHERE a.active = true AND a.createdAt < :cutoffDate")
+    @Query(value = "UPDATE advertisement_entity SET active = false WHERE active = true AND created_at < :cutoffDate", nativeQuery = true)
     int deactivateExpiredAds(@Param("cutoffDate") LocalDateTime cutoffDate);
 }

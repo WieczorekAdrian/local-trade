@@ -101,8 +101,9 @@ public class AdvertisementServiceImpl implements AdvertisementService {
     @Scheduled(cron = "0 0 3 * * *")
     public void deactivateOldAdvertisements() {
         LocalDateTime cutoffDate = LocalDateTime.now().minusDays(30);
+        log.info("Rozpoczynam wygaszanie ogłoszeń starszych niż: {}", cutoffDate);
         int updatedCount = advertisementRepository.deactivateExpiredAds(cutoffDate);
-        log.info("Wygaszono {} przeterminowanych ogłoszeń", updatedCount);
+        log.info("Zakończono. Wygaszono (ustawiono active=false) dla {} ogłoszeń.", updatedCount);
     }
 
     @Override
