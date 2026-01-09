@@ -19,12 +19,14 @@ import io.github.adrian.wieczorek.local_trade.service.user.service.UsersService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 
@@ -95,6 +97,14 @@ public class AdvertisementServiceImpl implements AdvertisementService {
         advertisementRepository.delete(ad);
         log.info("Deleted advertisement with id {}", advertisementId);
     }
+
+    @Scheduled(cron = "0 0 3 * * *")
+    public void deactivateOldAdvertisements() {
+        LocalDateTime cutoffDate = LocalDateTime.now().minusDays(30);
+        int updatedCount = advertisementRepository.deactivateExpiredAds(cutoffDate);
+        log.info("Wygaszono {} przeterminowanych ogłoszeń", updatedCount);
+    }
+
     @Override
     @Transactional
     public AdvertisementEntity getCurrentAdvertisement(UUID advertisementId){
