@@ -16,63 +16,51 @@ import java.net.URI;
 @Configuration
 public class AwsS3Config {
 
-    @Value("${s3.useMinio:true}")
-    private boolean useMinio;
+  @Value("${s3.useMinio:true}")
+  private boolean useMinio;
 
-    @Value("${s3.endpoint:http://localhost:9000}")
-    private String minioEndpoint;
+  @Value("${s3.endpoint:http://localhost:9000}")
+  private String minioEndpoint;
 
-    @Value("${s3.accessKey:minioadmin}")
-    private String minioAccessKey;
+  @Value("${s3.accessKey:minioadmin}")
+  private String minioAccessKey;
 
-    @Value("${s3.secretKey:minioadmin}")
-    private String minioSecretKey;
+  @Value("${s3.secretKey:minioadmin}")
+  private String minioSecretKey;
 
-    @Value("${aws.region:eu-central-1}")
-    private String awsRegion;
+  @Value("${aws.region:eu-central-1}")
+  private String awsRegion;
 
-    @Value("${s3.presignerEndpoint}")
-    private String presignerEndpoint;
+  @Value("${s3.presignerEndpoint}")
+  private String presignerEndpoint;
 
-    @Bean
-    public S3Client s3Client() {
-        if (useMinio) {
-            return S3Client.builder()
-                    .endpointOverride(URI.create(minioEndpoint))
-                    .region(Region.of("us-east-1"))
-                    .credentialsProvider(StaticCredentialsProvider.create(
-                            AwsBasicCredentials.create(minioAccessKey, minioSecretKey)
-                    ))
-                    .serviceConfiguration(S3Configuration.builder()
-                            .pathStyleAccessEnabled(true)
-                            .build())
-                    .build();
-        } else {
-            return S3Client.builder()
-                    .region(Region.of(awsRegion))
-                    .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
-                    .build();
-        }
+  @Bean
+  public S3Client s3Client() {
+    if (useMinio) {
+      return S3Client.builder().endpointOverride(URI.create(minioEndpoint))
+          .region(Region.of("us-east-1"))
+          .credentialsProvider(StaticCredentialsProvider
+              .create(AwsBasicCredentials.create(minioAccessKey, minioSecretKey)))
+          .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
+          .build();
+    } else {
+      return S3Client.builder().region(Region.of(awsRegion))
+          .credentialsProvider(EnvironmentVariableCredentialsProvider.create()).build();
     }
+  }
 
-    @Bean
-    public S3Presigner s3Presigner() {
-        if (useMinio) {
-            return S3Presigner.builder()
-                    .endpointOverride(URI.create(presignerEndpoint))
-                    .region(Region.of("us-east-1"))
-                    .credentialsProvider(StaticCredentialsProvider.create(
-                            AwsBasicCredentials.create(minioAccessKey, minioSecretKey)
-                    ))
-                    .serviceConfiguration(S3Configuration.builder()
-                            .pathStyleAccessEnabled(true)
-                            .build())
-                    .build();
-        } else {
-            return S3Presigner.builder()
-                    .region(Region.of(awsRegion))
-                    .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
-                    .build();
-        }
+  @Bean
+  public S3Presigner s3Presigner() {
+    if (useMinio) {
+      return S3Presigner.builder().endpointOverride(URI.create(presignerEndpoint))
+          .region(Region.of("us-east-1"))
+          .credentialsProvider(StaticCredentialsProvider
+              .create(AwsBasicCredentials.create(minioAccessKey, minioSecretKey)))
+          .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
+          .build();
+    } else {
+      return S3Presigner.builder().region(Region.of(awsRegion))
+          .credentialsProvider(EnvironmentVariableCredentialsProvider.create()).build();
     }
+  }
 }

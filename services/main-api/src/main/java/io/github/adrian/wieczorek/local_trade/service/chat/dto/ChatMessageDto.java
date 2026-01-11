@@ -13,18 +13,17 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class ChatMessageDto {
-    private String content;
-    private String sender;
-    private String recipient;
-    private LocalDateTime timestamp;
-    private boolean isRead;
+  private String content;
+  private String sender;
+  private String recipient;
+  private LocalDateTime timestamp;
+  private boolean isRead;
 
-    public ChatMessageDto(ChatMessageEntity entity) {
-        this.content = entity.getContent();
-        this.sender = entity.getSender().getEmail();
-        this.recipient = entity.getRecipient().getEmail();
-        this.timestamp = entity.getTimestamp();
-        this.isRead = entity.isRead();
-    }
+  public ChatMessageDto(ChatMessageEntity entity) {
+    this.content = entity.getContent();
+    this.sender = entity.getSender().getEmail();
+    this.recipient = entity.getRecipient().getEmail();
+    this.timestamp = entity.getTimestamp();
+    this.isRead = entity.isRead();
+  }
 }
-

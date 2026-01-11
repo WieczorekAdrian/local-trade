@@ -26,27 +26,28 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NewAdvertisementFacade {
 
-    private final AdvertisementService advertisementService;
-    private final S3Service s3Service;
-    private final UsersRepository usersRepository;
-    private final AdvertisementDtoMapper advertisementDtoMapper;
-    private final AdvertisementRepository advertisementRepository;
+  private final AdvertisementService advertisementService;
+  private final S3Service s3Service;
+  private final UsersRepository usersRepository;
+  private final AdvertisementDtoMapper advertisementDtoMapper;
+  private final AdvertisementRepository advertisementRepository;
 
-
-
-    @Transactional
-    public ResponseAdvertisementDto addWholeAdvertisement(RequestAdvertisementDto advertisementDto, List<MultipartFile> images, UserDetails userDetails) throws IOException {
-        UsersEntity user = usersRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-        SimpleAdvertisementResponseDto advertDto = advertisementService.addAd(advertisementDto,user);
-        AdvertisementEntity advertisementEntity = advertisementRepository.findByAdvertisementId(advertDto.advertisementId())
-                .orElseThrow(() -> new EntityNotFoundException("Advertisement not found"));
-        if (images != null && !images.isEmpty()) {
-            for (MultipartFile imageFile : images) {
-                ImageEntity imageEntity = s3Service.uploadFile(advertisementEntity.getAdvertisementId(), imageFile);
-                advertisementEntity.getImageEntities().add(imageEntity);
-            }
-        }
-        return advertisementDtoMapper.toResponseAdvertisementDto(advertisementEntity);
- }
+  @Transactional
+  public ResponseAdvertisementDto addWholeAdvertisement(RequestAdvertisementDto advertisementDto,
+      List<MultipartFile> images, UserDetails userDetails) throws IOException {
+    UsersEntity user = usersRepository.findByEmail(userDetails.getUsername())
+        .orElseThrow(() -> new UserNotFoundException("User not found"));
+    SimpleAdvertisementResponseDto advertDto = advertisementService.addAd(advertisementDto, user);
+    AdvertisementEntity advertisementEntity =
+        advertisementRepository.findByAdvertisementId(advertDto.advertisementId())
+            .orElseThrow(() -> new EntityNotFoundException("Advertisement not found"));
+    if (images != null && !images.isEmpty()) {
+      for (MultipartFile imageFile : images) {
+        ImageEntity imageEntity =
+            s3Service.uploadFile(advertisementEntity.getAdvertisementId(), imageFile);
+        advertisementEntity.getImageEntities().add(imageEntity);
+      }
+    }
+    return advertisementDtoMapper.toResponseAdvertisementDto(advertisementEntity);
+  }
 }

@@ -17,29 +17,29 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserChannelInterceptor implements ChannelInterceptor {
 
-    private final JwtService jwtService;
-    private final UsersRepository usersRepository;
+  private final JwtService jwtService;
+  private final UsersRepository usersRepository;
 
-    public UserChannelInterceptor(JwtService jwtService, UsersRepository usersRepository) {
-        this.jwtService = jwtService;
-        this.usersRepository = usersRepository;
-    }
+  public UserChannelInterceptor(JwtService jwtService, UsersRepository usersRepository) {
+    this.jwtService = jwtService;
+    this.usersRepository = usersRepository;
+  }
 
-    @Override
-    public Message<?> preSend(@NonNull Message<?> message,@NonNull MessageChannel channel) {
-        StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-        if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-            String token = accessor.getFirstNativeHeader("Authorization");
-            if (token != null && token.startsWith("Bearer ")) {
-                token = token.substring(7);
-                String email = jwtService.extractUsername(token);
-                UserDetails user = usersRepository.findByEmail(email)
-                                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
-                accessor.setUser(
-                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities())
-                );
-            }
-        }
-        return message;
+  @Override
+  public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
+    StompHeaderAccessor accessor =
+        MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+    if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
+      String token = accessor.getFirstNativeHeader("Authorization");
+      if (token != null && token.startsWith("Bearer ")) {
+        token = token.substring(7);
+        String email = jwtService.extractUsername(token);
+        UserDetails user = usersRepository.findByEmail(email)
+            .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+        accessor
+            .setUser(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+      }
     }
+    return message;
+  }
 }

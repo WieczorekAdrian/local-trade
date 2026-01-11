@@ -12,17 +12,18 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class UserRegisteredHandler implements NotificationHandler {
 
-    private final EmailService emailService;
+  private final EmailService emailService;
 
-    @Override
-    public void handle(NotificationEvent notificationEvent) {
-        String email = notificationEvent.getContextData().get("userEmail");
-        String username = notificationEvent.getContextData().get("userName");
-        log.info("Handling USER_REGISTERED event for: {} with email {}", username, email);
-        emailService.sendWelcomeEmail(email, username);
-    }
-    @Override
-    public boolean supports(String eventType) {
-        return "USER_REGISTERED".equals(eventType);
-    }
+  @Override
+  public void handle(NotificationEvent notificationEvent) {
+    String email = notificationEvent.getContextData().get("userEmail");
+    String username = notificationEvent.getContextData().get("userName");
+    log.info("Handling USER_REGISTERED event for: {} with email {}", username, email);
+    emailService.sendWelcomeEmail(email, username);
+  }
+
+  @Override
+  public boolean supports(String eventType) {
+    return "USER_REGISTERED".equals(eventType);
+  }
 }

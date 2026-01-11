@@ -23,71 +23,64 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final HandlerExceptionResolver handlerExceptionResolver;
-    private final JwtService jwtService;
-    private final UserDetailsService userDetailsService;
-    private final JwtBlacklistService jwtBlacklistService;
+  private final HandlerExceptionResolver handlerExceptionResolver;
+  private final JwtService jwtService;
+  private final UserDetailsService userDetailsService;
+  private final JwtBlacklistService jwtBlacklistService;
 
-    @Override
-    protected void doFilterInternal(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
+  @Override
+  protected void doFilterInternal(@NonNull HttpServletRequest request,
+      @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
+      throws ServletException, IOException {
 
-        String jwt = extractJwtFromRequest(request);
-        if (jwt == null) {
-            filterChain.doFilter(request, response);
-            return;
+    String jwt = extractJwtFromRequest(request);
+    if (jwt == null) {
+      filterChain.doFilter(request, response);
+      return;
+    }
+    request.setAttribute("jwt.token", jwt);
+
+    try {
+      if (jwtBlacklistService.isTokenBlacklisted(jwt)) {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        return;
+      }
+
+      final String userEmail = jwtService.extractUsername(jwt);
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+      if (userEmail != null && authentication == null) {
+        UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+
+        if (jwtService.isTokenValid(jwt, userDetails)) {
+          UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+              userDetails, null, userDetails.getAuthorities());
+
+          authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+          SecurityContextHolder.getContext().setAuthentication(authToken);
         }
-        request.setAttribute("jwt.token", jwt);
+      }
 
-        try {
-            if (jwtBlacklistService.isTokenBlacklisted(jwt)) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
-            }
+      filterChain.doFilter(request, response);
+    } catch (Exception exception) {
+      handlerExceptionResolver.resolveException(request, response, null, exception);
+    }
+  }
 
-            final String userEmail = jwtService.extractUsername(jwt);
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-            if (userEmail != null && authentication == null) {
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-
-                if (jwtService.isTokenValid(jwt, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
-
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
-            }
-
-            filterChain.doFilter(request, response);
-        } catch (Exception exception) {
-            handlerExceptionResolver.resolveException(request, response, null, exception);
-        }
+  private String extractJwtFromRequest(HttpServletRequest request) {
+    final String authHeader = request.getHeader("Authorization");
+    if (authHeader != null && authHeader.startsWith("Bearer ")) {
+      return authHeader.substring(7);
     }
 
-
-
-    private String extractJwtFromRequest(HttpServletRequest request) {
-        final String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
+    if (request.getCookies() != null) {
+      for (Cookie cookie : request.getCookies()) {
+        if ("accessToken".equals(cookie.getName())) {
+          return cookie.getValue();
         }
-
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if ("accessToken".equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
-            }
-        }
-
-        return null;
+      }
     }
+
+    return null;
+  }
 }

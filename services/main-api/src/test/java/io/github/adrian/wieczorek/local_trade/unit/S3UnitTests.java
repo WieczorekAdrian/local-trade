@@ -20,57 +20,50 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.UUID;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class S3UnitTests {
-    @Mock
-    private AdvertisementRepository advertisementRepository;
-    @Mock
-    ImageRepository imageRepository;
-    @Mock
-    S3Client s3Client;
-    @InjectMocks
-    S3ServiceImpl s3Service;
+  @Mock
+  private AdvertisementRepository advertisementRepository;
+  @Mock
+  ImageRepository imageRepository;
+  @Mock
+  S3Client s3Client;
+  @InjectMocks
+  S3ServiceImpl s3Service;
 
-    @BeforeAll
-    static void setupRegion() {
-        System.setProperty("aws.region", "us-east-1");
-    }
-    @Test
-    public void createThumbnail_thenThumbnailIsCreated() throws IOException {
-        BufferedImage original = new BufferedImage(800, 600, BufferedImage.TYPE_INT_RGB);
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        ImageIO.write(original,"jpg",os);
+  @BeforeAll
+  static void setupRegion() {
+    System.setProperty("aws.region", "us-east-1");
+  }
 
-        MockMultipartFile file = new MockMultipartFile(
-                "file",
-                "flower.jpg",
-                "jpeg",
-                os.toByteArray()
-        );
-        byte[] thumbnail = s3Service.generateThumbnail(file);
-        Assertions.assertNotNull(thumbnail);
-        Assertions.assertNotEquals(file.getBytes().length, thumbnail.length);
-        Assertions.assertTrue(thumbnail.length < file.getBytes().length);
-    }
+  @Test
+  public void createThumbnail_thenThumbnailIsCreated() throws IOException {
+    BufferedImage original = new BufferedImage(800, 600, BufferedImage.TYPE_INT_RGB);
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
+    ImageIO.write(original, "jpg", os);
 
-    @Test
-    public void testForImageRepository_thenReturnImageGetKey() {
-        ImageEntity imageEntity = new ImageEntity();
-        imageEntity.setImageId(UUID.randomUUID());
-        imageEntity.setKey("some/key.jpg");
+    MockMultipartFile file = new MockMultipartFile("file", "flower.jpg", "jpeg", os.toByteArray());
+    byte[] thumbnail = s3Service.generateThumbnail(file);
+    Assertions.assertNotNull(thumbnail);
+    Assertions.assertNotEquals(file.getBytes().length, thumbnail.length);
+    Assertions.assertTrue(thumbnail.length < file.getBytes().length);
+  }
 
-        when(imageRepository.findByImageId(imageEntity.getImageId())).thenReturn(imageEntity);
+  @Test
+  public void testForImageRepository_thenReturnImageGetKey() {
+    ImageEntity imageEntity = new ImageEntity();
+    imageEntity.setImageId(UUID.randomUUID());
+    imageEntity.setKey("some/key.jpg");
 
-        ImageEntity found = imageRepository.findByImageId(imageEntity.getImageId());
+    when(imageRepository.findByImageId(imageEntity.getImageId())).thenReturn(imageEntity);
 
-        verify(imageRepository, times(1)).findByImageId(imageEntity.getImageId());
-        Assertions.assertNotNull(found);
-        assertEquals("some/key.jpg", found.getKey());
-    }
+    ImageEntity found = imageRepository.findByImageId(imageEntity.getImageId());
+
+    verify(imageRepository, times(1)).findByImageId(imageEntity.getImageId());
+    Assertions.assertNotNull(found);
+    assertEquals("some/key.jpg", found.getKey());
+  }
 }

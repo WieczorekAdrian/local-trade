@@ -22,36 +22,33 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CookieHandshakeInterceptor implements HandshakeInterceptor {
 
-    private final JwtService jwtService;
+  private final JwtService jwtService;
 
-    @Override
-    public boolean beforeHandshake(@NonNull ServerHttpRequest request, @NonNull ServerHttpResponse response,
-                                   @NonNull WebSocketHandler wsHandler, @NonNull Map<String, Object> attributes) {
+  @Override
+  public boolean beforeHandshake(@NonNull ServerHttpRequest request,
+      @NonNull ServerHttpResponse response, @NonNull WebSocketHandler wsHandler,
+      @NonNull Map<String, Object> attributes) {
 
-        if (request instanceof ServletServerHttpRequest servletRequest) {
-            HttpServletRequest req = servletRequest.getServletRequest();
+    if (request instanceof ServletServerHttpRequest servletRequest) {
+      HttpServletRequest req = servletRequest.getServletRequest();
 
-            Optional.ofNullable(req.getCookies())
-                    .stream()
-                    .flatMap(Arrays::stream)
-                    .filter(cookie -> "accessToken".equals(cookie.getName()))
-                    .findFirst()
-                    .map(Cookie::getValue)
-                    .ifPresent(token -> {
-                        try {
-                            String email = jwtService.extractUsername(token);
-                            attributes.put("userEmail", email);
-                            log.info("Authorized web token for {}", email);
-                        } catch (Exception e) {
-                            log.warn("Not authorized for{}", e.getMessage());
-                        }
-                    });
-        }
-        return true;
+      Optional.ofNullable(req.getCookies()).stream().flatMap(Arrays::stream)
+          .filter(cookie -> "accessToken".equals(cookie.getName())).findFirst()
+          .map(Cookie::getValue).ifPresent(token -> {
+            try {
+              String email = jwtService.extractUsername(token);
+              attributes.put("userEmail", email);
+              log.info("Authorized web token for {}", email);
+            } catch (Exception e) {
+              log.warn("Not authorized for{}", e.getMessage());
+            }
+          });
     }
+    return true;
+  }
 
-    @Override
-    public void afterHandshake(@NonNull ServerHttpRequest request, @NonNull ServerHttpResponse response,
-                               @NonNull WebSocketHandler wsHandler, Exception exception) {
-    }
+  @Override
+  public void afterHandshake(@NonNull ServerHttpRequest request,
+      @NonNull ServerHttpResponse response, @NonNull WebSocketHandler wsHandler,
+      Exception exception) {}
 }

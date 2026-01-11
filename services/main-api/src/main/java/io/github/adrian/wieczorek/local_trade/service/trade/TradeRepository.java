@@ -9,8 +9,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface TradeRepository extends JpaRepository<TradeEntity, Long> {
-    boolean existsByAdvertisementEntityAndBuyer(AdvertisementEntity advertisementEntity, UsersEntity buyer);
-    List<TradeEntity> findAllByBuyerOrSeller(UsersEntity user, UsersEntity userAgain);
-    Optional<TradeEntity> findByBuyerAndSeller(UsersEntity user, UsersEntity userAgain);
-    Optional<TradeEntity> findByTradeId(UUID tradeId);
+  boolean existsByAdvertisementEntityAndBuyer(AdvertisementEntity advertisementEntity,
+      UsersEntity buyer);
+
+  List<TradeEntity> findAllByBuyerOrSeller(UsersEntity user, UsersEntity userAgain);
+
+  Optional<TradeEntity> findByBuyerAndSeller(UsersEntity user, UsersEntity userAgain);
+
+  Optional<TradeEntity> findByTradeId(UUID tradeId);
 }

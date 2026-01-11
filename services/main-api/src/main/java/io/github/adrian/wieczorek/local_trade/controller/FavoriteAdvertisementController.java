@@ -18,27 +18,29 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FavoriteAdvertisementController {
 
-    private final FavoriteAdvertisementService favoriteAdvertisementService;
+  private final FavoriteAdvertisementService favoriteAdvertisementService;
 
+  @PreAuthorize("isAuthenticated()")
+  @GetMapping("/me")
+  public ResponseEntity<Set<FavoriteAdvertisementDto>> getMyFavoriteAdvertisements(
+      @AuthenticationPrincipal UserDetails userDetails) {
+    return ResponseEntity.ok(favoriteAdvertisementService.getFavoriteAdvertisements(userDetails));
+  }
 
-    @PreAuthorize("isAuthenticated()")
-    @GetMapping("/me")
-    public ResponseEntity<Set<FavoriteAdvertisementDto>> getMyFavoriteAdvertisements(@AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(favoriteAdvertisementService.getFavoriteAdvertisements(userDetails));
-    }
+  @PostMapping("/{id}")
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<Void> addToMyFavoriteAdvertisements(
+      @AuthenticationPrincipal UserDetails userDetails, @PathVariable @NonNull UUID id) {
+    favoriteAdvertisementService.addFavoriteAdvertisement(userDetails, id);
+    return ResponseEntity.noContent().build();
+  }
 
-    @PostMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> addToMyFavoriteAdvertisements(@AuthenticationPrincipal UserDetails userDetails, @PathVariable @NonNull UUID id) {
-        favoriteAdvertisementService.addFavoriteAdvertisement(userDetails, id);
-        return ResponseEntity.noContent().build();
-    }
+  @DeleteMapping("/{id}")
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<Void> deleteFromMyFavoriteAdvertisements(
+      @AuthenticationPrincipal UserDetails userDetails, @PathVariable @NonNull UUID id) {
+    favoriteAdvertisementService.deleteFavoriteAdvertisement(userDetails, id);
+    return ResponseEntity.noContent().build();
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> deleteFromMyFavoriteAdvertisements(@AuthenticationPrincipal UserDetails userDetails, @PathVariable @NonNull UUID id) {
-        favoriteAdvertisementService.deleteFavoriteAdvertisement(userDetails, id);
-        return ResponseEntity.noContent().build();
-
-    }
+  }
 }

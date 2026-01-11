@@ -12,20 +12,22 @@ import java.security.Principal;
 import java.util.List;
 
 public interface ChatMessageService {
-    @Transactional
-    ChatMessageEntity save(ChatMessageEntity chatMessageEntity);
+  @Transactional
+  ChatMessageEntity save(ChatMessageEntity chatMessageEntity);
 
-    @Transactional
-    ChatMessageDto createAndSaveMessageForPrivateUser(ChatMessagePayload chatMessage, Principal principal, String recipientEmail);
+  @Transactional
+  ChatMessageDto createAndSaveMessageForPrivateUser(ChatMessagePayload chatMessage,
+      Principal principal, String recipientEmail);
 
-    @Transactional(readOnly = true)
-    List<ChatMessageDto> getChatHistory(UserDetails sender, String recipientUsername);
+  @Transactional(readOnly = true)
+  List<ChatMessageDto> getChatHistory(UserDetails sender, String recipientUsername);
 
-    @Transactional
-    void markMessagesAsRead(String senderEmail, String recipientEmail);
+  @Transactional
+  void markMessagesAsRead(String senderEmail, String recipientEmail);
 
-    @Transactional(readOnly = true)
-    List<ChatSummaryDto> getInbox(String userEmail);
-    @Transactional(readOnly = true)
-    UnreadCountDto getTotalUnreadCount(String userEmail);
+  @Transactional(readOnly = true)
+  List<ChatSummaryDto> getInbox(String userEmail);
+
+  @Transactional(readOnly = true)
+  UnreadCountDto getTotalUnreadCount(String userEmail);
 }

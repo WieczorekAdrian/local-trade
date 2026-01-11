@@ -6,5 +6,5 @@ import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
 public interface UserDashboardResponseMapper {
-    UserDashboardResponseDto toDto(UsersEntity user);
+  UserDashboardResponseDto toDto(UsersEntity user);
 }

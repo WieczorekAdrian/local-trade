@@ -39,78 +39,77 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class NewAdvertisementEntityFacadeUnitTests {
-    @InjectMocks
-    private NewAdvertisementFacade newAdvertisementFacade;
-    @Mock
-    private UsersRepository usersRepository;
-    @Mock
-    private AdvertisementRepository advertisementRepository;
-    @Mock
-    private S3Service s3Service;
-    @Mock
-    private AdvertisementService advertisementService;
-    @Mock
-    AdvertisementDtoMapper advertisementDtoMapper;
-    @Mock
-    NotificationEventPublisher notificationEventPublisher;
+  @InjectMocks
+  private NewAdvertisementFacade newAdvertisementFacade;
+  @Mock
+  private UsersRepository usersRepository;
+  @Mock
+  private AdvertisementRepository advertisementRepository;
+  @Mock
+  private S3Service s3Service;
+  @Mock
+  private AdvertisementService advertisementService;
+  @Mock
+  AdvertisementDtoMapper advertisementDtoMapper;
+  @Mock
+  NotificationEventPublisher notificationEventPublisher;
 
-    @Test
-    public void testCreateNewAdvertisement() throws Exception {
-        RequestAdvertisementDto advertisementDto = AdUtils.createRequestAdvertisementDto();
-        UsersEntity user = UserUtils.createUserRoleUser();
-        MockMultipartFile mockMultipartFile = new MockMultipartFile("file", "test".getBytes());
-        UserDetails userDetails = Mockito.mock(UserDetails.class);
-        CategoryEntity categoryEntity = CategoryUtils.createCategory();
-        List<MultipartFile> multipartFiles = new ArrayList<>();
-        AdvertisementEntity advertisementEntity = AdUtils.createAdvertisementRoleUserForIntegrationTests(categoryEntity,user);
-        ImageEntity imageEntity = new ImageEntity();
-        List<ImageEntity> imageEntities = new ArrayList<>();
-        advertisementEntity.setImageEntities(imageEntities);
-        List<String> imageUrls = advertisementEntity.getImageEntities().stream().map(ImageEntity::getUrl).toList();
-        List<String> thumbnailUrls = advertisementEntity.getImageEntities().stream().map(ImageEntity::getThumbnailUrl).toList();
-        SimpleAdvertisementResponseDto advertisementResponseDto = new SimpleAdvertisementResponseDto(advertisementEntity.getAdvertisementId(), advertisementEntity.getTitle());
-        ResponseAdvertisementDto responseAdvertisementDto = new ResponseAdvertisementDto(
-                LocalDateTime.now(),
-                advertisementEntity.getAdvertisementId(),
-                advertisementEntity.getUser().getUserId(),
-                advertisementEntity.getUser().getEmail(),
-                advertisementEntity.getCategoryEntity().getId(),
-                advertisementEntity.getPrice(),
-                advertisementEntity.getTitle(),
-                advertisementEntity.getImage(),
-                advertisementEntity.getDescription(),
-                advertisementEntity.isActive(),
-                advertisementEntity.getLocation(),
-                imageUrls,
-                thumbnailUrls
-        );
+  @Test
+  public void testCreateNewAdvertisement() throws Exception {
+    RequestAdvertisementDto advertisementDto = AdUtils.createRequestAdvertisementDto();
+    UsersEntity user = UserUtils.createUserRoleUser();
+    MockMultipartFile mockMultipartFile = new MockMultipartFile("file", "test".getBytes());
+    UserDetails userDetails = Mockito.mock(UserDetails.class);
+    CategoryEntity categoryEntity = CategoryUtils.createCategory();
+    List<MultipartFile> multipartFiles = new ArrayList<>();
+    AdvertisementEntity advertisementEntity =
+        AdUtils.createAdvertisementRoleUserForIntegrationTests(categoryEntity, user);
+    ImageEntity imageEntity = new ImageEntity();
+    List<ImageEntity> imageEntities = new ArrayList<>();
+    advertisementEntity.setImageEntities(imageEntities);
+    List<String> imageUrls =
+        advertisementEntity.getImageEntities().stream().map(ImageEntity::getUrl).toList();
+    List<String> thumbnailUrls =
+        advertisementEntity.getImageEntities().stream().map(ImageEntity::getThumbnailUrl).toList();
+    SimpleAdvertisementResponseDto advertisementResponseDto = new SimpleAdvertisementResponseDto(
+        advertisementEntity.getAdvertisementId(), advertisementEntity.getTitle());
+    ResponseAdvertisementDto responseAdvertisementDto =
+        new ResponseAdvertisementDto(LocalDateTime.now(), advertisementEntity.getAdvertisementId(),
+            advertisementEntity.getUser().getUserId(), advertisementEntity.getUser().getEmail(),
+            advertisementEntity.getCategoryEntity().getId(), advertisementEntity.getPrice(),
+            advertisementEntity.getTitle(), advertisementEntity.getImage(),
+            advertisementEntity.getDescription(), advertisementEntity.isActive(),
+            advertisementEntity.getLocation(), imageUrls, thumbnailUrls);
 
-        for(int i = 0; i<5; i++) {
-            multipartFiles.add(mockMultipartFile);
-        }
-        for (int i=0 ; i<5; i++) {
-            imageEntities.add(new ImageEntity());
-        }
-
-        when(userDetails.getUsername()).thenReturn(user.getEmail());
-        when(usersRepository.findByEmail(userDetails.getUsername())).thenReturn(Optional.of(user));
-        when(advertisementService.addAd(eq(advertisementDto), eq(user))).thenReturn(advertisementResponseDto);
-        when(s3Service.uploadFile(any(UUID.class), any(MultipartFile.class))).thenReturn(imageEntity);
-        when(advertisementDtoMapper.toResponseAdvertisementDto(advertisementEntity)).thenReturn(responseAdvertisementDto);
-        when(advertisementRepository.findByAdvertisementId(advertisementEntity.getAdvertisementId())).thenReturn(Optional.of(advertisementEntity));
-
-
-        ResponseAdvertisementDto result = newAdvertisementFacade.addWholeAdvertisement(advertisementDto,multipartFiles,userDetails);
-
-        Assertions.assertNotNull(result);
-        Assertions.assertEquals(advertisementEntity.getAdvertisementId(), result.advertisementId());
-        Assertions.assertEquals(advertisementEntity.getCategoryEntity().getId(), result.categoryId());
-        Assertions.assertEquals(advertisementEntity.getImage(), result.image());
-        verify(usersRepository).findByEmail(user.getEmail());
-        verify(advertisementService).addAd(eq(advertisementDto), eq(user));
-        verify(s3Service, times(5)).uploadFile(any(UUID.class), any(MultipartFile.class));
-        verifyNoMoreInteractions(s3Service, advertisementService, usersRepository);
-
+    for (int i = 0; i < 5; i++) {
+      multipartFiles.add(mockMultipartFile);
     }
+    for (int i = 0; i < 5; i++) {
+      imageEntities.add(new ImageEntity());
+    }
+
+    when(userDetails.getUsername()).thenReturn(user.getEmail());
+    when(usersRepository.findByEmail(userDetails.getUsername())).thenReturn(Optional.of(user));
+    when(advertisementService.addAd(eq(advertisementDto), eq(user)))
+        .thenReturn(advertisementResponseDto);
+    when(s3Service.uploadFile(any(UUID.class), any(MultipartFile.class))).thenReturn(imageEntity);
+    when(advertisementDtoMapper.toResponseAdvertisementDto(advertisementEntity))
+        .thenReturn(responseAdvertisementDto);
+    when(advertisementRepository.findByAdvertisementId(advertisementEntity.getAdvertisementId()))
+        .thenReturn(Optional.of(advertisementEntity));
+
+    ResponseAdvertisementDto result =
+        newAdvertisementFacade.addWholeAdvertisement(advertisementDto, multipartFiles, userDetails);
+
+    Assertions.assertNotNull(result);
+    Assertions.assertEquals(advertisementEntity.getAdvertisementId(), result.advertisementId());
+    Assertions.assertEquals(advertisementEntity.getCategoryEntity().getId(), result.categoryId());
+    Assertions.assertEquals(advertisementEntity.getImage(), result.image());
+    verify(usersRepository).findByEmail(user.getEmail());
+    verify(advertisementService).addAd(eq(advertisementDto), eq(user));
+    verify(s3Service, times(5)).uploadFile(any(UUID.class), any(MultipartFile.class));
+    verifyNoMoreInteractions(s3Service, advertisementService, usersRepository);
+
+  }
 
 }

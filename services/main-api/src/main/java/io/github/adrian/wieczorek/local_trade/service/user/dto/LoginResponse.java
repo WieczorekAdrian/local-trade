@@ -12,8 +12,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class LoginResponse {
-    private String token;
-    private long expiresIn;
-    private String refreshToken;
+  private String token;
+  private long expiresIn;
+  private String refreshToken;
 
 }

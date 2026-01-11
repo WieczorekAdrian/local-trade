@@ -19,17 +19,16 @@ import java.util.UUID;
 @Data
 @Entity
 public class CategoryEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer Id;
-    @NotBlank(message = "Category name can't be null")
-    @Size(min = 3 , message = "Min 3 keys")
-    private String name;
-    @NotBlank(message = "Description can't be blank")
-    private String description;
-    private String parentCategory;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer Id;
+  @NotBlank(message = "Category name can't be null")
+  @Size(min = 3, message = "Min 3 keys")
+  private String name;
+  @NotBlank(message = "Description can't be blank")
+  private String description;
+  private String parentCategory;
 
-    private UUID categoryId =  UUID.randomUUID();
-
+  private UUID categoryId = UUID.randomUUID();
 
 }

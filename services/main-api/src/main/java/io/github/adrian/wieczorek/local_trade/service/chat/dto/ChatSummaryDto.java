@@ -5,10 +5,6 @@ import lombok.Builder;
 import java.time.LocalDateTime;
 
 @Builder
-public record ChatSummaryDto(
-        String lastMessage,
-        String partnerName,
-        String partnerEmail,
-        LocalDateTime lastMessageTimestamp,
-        long unreadCount
-) {}
+public record ChatSummaryDto(String lastMessage, String partnerName, String partnerEmail,
+		LocalDateTime lastMessageTimestamp, long unreadCount) {
+}

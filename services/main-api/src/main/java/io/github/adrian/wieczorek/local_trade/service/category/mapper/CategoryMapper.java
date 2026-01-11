@@ -7,8 +7,8 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface CategoryMapper {
 
-    CategoryDto postCategoryToDto(CategoryEntity categoryEntity);
+  CategoryDto postCategoryToDto(CategoryEntity categoryEntity);
 
-    CategoryEntity postCategoryFromDto(CategoryDto categoryDto);
+  CategoryEntity postCategoryFromDto(CategoryDto categoryDto);
 
 }

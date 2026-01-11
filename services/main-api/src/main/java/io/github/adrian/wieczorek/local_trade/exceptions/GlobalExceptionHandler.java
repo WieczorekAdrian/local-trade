@@ -6,7 +6,6 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,99 +23,103 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ProblemDetail handleBadCredentials(BadCredentialsException ex) {
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
-        problemDetail.setTitle("Authentication Failure");
-        problemDetail.setProperty("error_code", "BAD_CREDENTIALS"); // Opcjonalne własne pola
-        return problemDetail;
+  @ExceptionHandler(BadCredentialsException.class)
+  public ProblemDetail handleBadCredentials(BadCredentialsException ex) {
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    problemDetail.setTitle("Authentication Failure");
+    problemDetail.setProperty("error_code", "BAD_CREDENTIALS"); // Opcjonalne własne pola
+    return problemDetail;
+  }
+
+  @ExceptionHandler({AccessDeniedException.class, AccountStatusException.class,
+      SignatureException.class, ExpiredJwtException.class})
+  public ProblemDetail handleAccessDenied(Exception ex) {
+    log.warn("Security exception: {}", ex.getMessage());
+
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+    problemDetail.setTitle("Access Denied");
+
+    if (ex instanceof ExpiredJwtException) {
+      problemDetail.setProperty("description", "The JWT token has expired");
+    } else if (ex instanceof SignatureException) {
+      problemDetail.setProperty("description", "The JWT signature is invalid");
     }
 
-    @ExceptionHandler({
-            AccessDeniedException.class,
-            AccountStatusException.class,
-            SignatureException.class,
-            ExpiredJwtException.class
-    })
-    public ProblemDetail handleAccessDenied(Exception ex) {
-        log.warn("Security exception: {}", ex.getMessage());
+    return problemDetail;
+  }
 
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
-        problemDetail.setTitle("Access Denied");
+  @ExceptionHandler({EntityNotFoundException.class, ResourceNotFoundException.class})
+  public ProblemDetail handleNotFound(Exception ex) {
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    problemDetail.setTitle("Resource Not Found");
+    return problemDetail;
+  }
 
-        if (ex instanceof ExpiredJwtException) {
-            problemDetail.setProperty("description", "The JWT token has expired");
-        } else if (ex instanceof SignatureException) {
-            problemDetail.setProperty("description", "The JWT signature is invalid");
-        }
+  @ExceptionHandler(GlobalConflictException.class)
+  public ProblemDetail handleConflict(GlobalConflictException ex) {
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    problemDetail.setTitle("Conflict");
+    return problemDetail;
+  }
 
-        return problemDetail;
-    }
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ProblemDetail handleValidationExceptions(MethodArgumentNotValidException ex) {
+    Map<String, String> errors = new HashMap<>();
+    ex.getBindingResult().getFieldErrors()
+        .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
 
-    @ExceptionHandler({EntityNotFoundException.class, ResourceNotFoundException.class})
-    public ProblemDetail handleNotFound(Exception ex) {
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
-        problemDetail.setTitle("Resource Not Found");
-        return problemDetail;
-    }
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed");
+    problemDetail.setTitle("Validation Error");
+    problemDetail.setProperty("field_errors", errors); // Dodajemy mapę błędów do standardowego pola
+    return problemDetail;
+  }
 
-    @ExceptionHandler(GlobalConflictException.class)
-    public ProblemDetail handleConflict(GlobalConflictException ex) {
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
-        problemDetail.setTitle("Conflict");
-        return problemDetail;
-    }
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ProblemDetail handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+    String requiredType =
+        (ex.getRequiredType() != null) ? ex.getRequiredType().getSimpleName() : "unknown";
+    String detail =
+        String.format("Parameter '%s' has an invalid value: '%s'. Required type is '%s'.",
+            ex.getName(), ex.getValue(), requiredType);
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage())
-        );
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
+    problemDetail.setTitle("Type Mismatch");
+    return problemDetail;
+  }
 
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed");
-        problemDetail.setTitle("Validation Error");
-        problemDetail.setProperty("field_errors", errors); // Dodajemy mapę błędów do standardowego pola
-        return problemDetail;
-    }
+  @ExceptionHandler(UserLogOutException.class)
+  public ProblemDetail handleUserLogOutException(UserLogOutException ex) {
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    problemDetail.setTitle("Authentication Failure");
+    return problemDetail;
+  }
 
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ProblemDetail handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        String requiredType = (ex.getRequiredType() != null) ? ex.getRequiredType().getSimpleName() : "unknown";
-        String detail = String.format("Parameter '%s' has an invalid value: '%s'. Required type is '%s'.",
-                ex.getName(), ex.getValue(), requiredType);
+  @ExceptionHandler(Exception.class)
+  public ProblemDetail handleGlobalException(Exception ex) {
+    log.error("Unexpected error occurred: ", ex);
 
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
-        problemDetail.setTitle("Type Mismatch");
-        return problemDetail;
-    }
-    @ExceptionHandler(UserLogOutException.class)
-    public ProblemDetail handleUserLogOutException(UserLogOutException ex) {
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
-        problemDetail.setTitle("Authentication Failure");
-        return problemDetail;
-    }
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
+        "An internal server error occurred.");
+    problemDetail.setTitle("Internal Server Error");
+    return problemDetail;
+  }
 
-    @ExceptionHandler(Exception.class)
-    public ProblemDetail handleGlobalException(Exception ex) {
-        log.error("Unexpected error occurred: ", ex);
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ProblemDetail handleMaxUploadSize(MaxUploadSizeExceededException ex) {
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.PAYLOAD_TOO_LARGE,
+        "Przesłane pliki są zbyt duże.");
 
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "An internal server error occurred.");
-        problemDetail.setTitle("Internal Server Error");
-        return problemDetail;
-    }
-    @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ProblemDetail handleMaxUploadSize(MaxUploadSizeExceededException ex) {
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.PAYLOAD_TOO_LARGE,
-                "Przesłane pliki są zbyt duże."
-        );
+    problemDetail.setTitle("Przekroczono limit wysyłania");
+    problemDetail.setProperty("timestamp", Instant.now());
+    problemDetail.setProperty("maxFileSize", "10MB");
+    problemDetail.setProperty("maxRequestSize", "50MB");
 
-        problemDetail.setTitle("Przekroczono limit wysyłania");
-        problemDetail.setProperty("timestamp", Instant.now());
-        problemDetail.setProperty("maxFileSize", "10MB");
-        problemDetail.setProperty("maxRequestSize", "50MB");
-
-        return problemDetail;
-    }
+    return problemDetail;
+  }
 }

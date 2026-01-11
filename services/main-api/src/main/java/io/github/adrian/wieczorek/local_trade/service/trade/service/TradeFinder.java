@@ -13,24 +13,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 @Slf4j
 public class TradeFinder {
 
-    private final UsersService usersService;
-    private final TradeRepository tradeRepository;
-    private final TradeResponseDtoMapper tradeResponseDtoMapper;
+  private final UsersService usersService;
+  private final TradeRepository tradeRepository;
+  private final TradeResponseDtoMapper tradeResponseDtoMapper;
 
+  public List<TradeResponseDto> getAllMyTrades(UserDetails userDetails) {
+    UsersEntity user = usersService.getCurrentUser(userDetails.getUsername());
+    List<TradeEntity> tradeEntities = tradeRepository.findAllByBuyerOrSeller(user, user);
 
-    public List<TradeResponseDto> getAllMyTrades(UserDetails userDetails){
-        UsersEntity user = usersService.getCurrentUser(userDetails.getUsername());
-        List<TradeEntity> tradeEntities = tradeRepository.findAllByBuyerOrSeller(user,user);
+    return tradeEntities.stream().map(tradeResponseDtoMapper::tradeToTradeResponseDto).toList();
 
-        return  tradeEntities.stream()
-                .map(tradeResponseDtoMapper::tradeToTradeResponseDto)
-                .toList();
-
-    }
+  }
 }

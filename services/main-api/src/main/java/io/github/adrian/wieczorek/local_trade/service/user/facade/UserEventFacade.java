@@ -11,24 +11,17 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UserEventFacade {
 
-    private final NotificationEventPublisher publisher;
+  private final NotificationEventPublisher publisher;
 
+  public void publishUserRegistered(UsersEntity newUser) {
+    Map<String, String> contextData =
+        Map.of("userName", newUser.getName(), "userEmail", newUser.getEmail());
 
+    NotificationEvent event =
+        new NotificationEvent("USER_REGISTERED", newUser.getUserId(), contextData);
 
-    public void publishUserRegistered(UsersEntity newUser) {
-        Map<String, String> contextData = Map.of(
-                "userName", newUser.getName(),
-                "userEmail", newUser.getEmail()
-        );
+    String routingKey = "notification.event.user_registered";
 
-        NotificationEvent event = new NotificationEvent(
-                "USER_REGISTERED",
-                newUser.getUserId(),
-                contextData
-        );
-
-        String routingKey = "notification.event.user_registered";
-
-        publisher.publishEvent(event, routingKey);
-    }
+    publisher.publishEvent(event, routingKey);
+  }
 }

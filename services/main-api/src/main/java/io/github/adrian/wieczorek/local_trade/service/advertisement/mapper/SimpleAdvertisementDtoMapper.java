@@ -7,6 +7,6 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface SimpleAdvertisementDtoMapper {
 
-    SimpleAdvertisementResponseDto advertisementToSimpleDto(AdvertisementEntity advertisementEntity);
+  SimpleAdvertisementResponseDto advertisementToSimpleDto(AdvertisementEntity advertisementEntity);
 
 }

@@ -8,10 +8,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 public interface AuthenticationService {
-    @Transactional
-    UsersEntity signup(RegisterUsersDto dto);
-    @Transactional
-    UsersEntity authenticate(LoginDto dto);
-    List<String> getAuthenticatedRoles();
-    public void logout(String authHeader, String refreshToken);
+  @Transactional
+  UsersEntity signup(RegisterUsersDto dto);
+
+  @Transactional
+  UsersEntity authenticate(LoginDto dto);
+
+  List<String> getAuthenticatedRoles();
+
+  public void logout(String authHeader, String refreshToken);
 }

@@ -12,42 +12,30 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdvertisementEventFacade {
 
-    private final NotificationEventPublisher publisher;
+  private final NotificationEventPublisher publisher;
 
-    public void publishAdCreated(UsersEntity user, AdvertisementEntity newAdvertisementEntity) {
-        Map<String, String> contextData = Map.of(
-                "adId", newAdvertisementEntity.getAdvertisementId().toString(),
-                "adTitle", newAdvertisementEntity.getTitle(),
-                "userName", user.getName(),
-                "userEmail", user.getEmail()
-        );
+  public void publishAdCreated(UsersEntity user, AdvertisementEntity newAdvertisementEntity) {
+    Map<String, String> contextData =
+        Map.of("adId", newAdvertisementEntity.getAdvertisementId().toString(), "adTitle",
+            newAdvertisementEntity.getTitle(), "userName", user.getName(), "userEmail",
+            user.getEmail());
 
-        NotificationEvent event = new NotificationEvent(
-                "AD_CREATED",
-                user.getUserId(),
-                contextData
-        );
+    NotificationEvent event = new NotificationEvent("AD_CREATED", user.getUserId(), contextData);
 
-        String routingKey = "notification.event.ad_created";
+    String routingKey = "notification.event.ad_created";
 
-        publisher.publishEvent(event, routingKey);
-    }
+    publisher.publishEvent(event, routingKey);
+  }
 
-    public void publishAdUpdated(UsersEntity editor, AdvertisementEntity updatedAdvertisementEntity) {
-        Map<String, String> contextData = Map.of(
-                "adId", updatedAdvertisementEntity.getAdvertisementId().toString(),
-                "adTitle", updatedAdvertisementEntity.getTitle(),
-                "editorName", editor.getName()
-        );
+  public void publishAdUpdated(UsersEntity editor, AdvertisementEntity updatedAdvertisementEntity) {
+    Map<String, String> contextData =
+        Map.of("adId", updatedAdvertisementEntity.getAdvertisementId().toString(), "adTitle",
+            updatedAdvertisementEntity.getTitle(), "editorName", editor.getName());
 
-        NotificationEvent event = new NotificationEvent(
-                "AD_UPDATED",
-                editor.getUserId(),
-                contextData
-        );
+    NotificationEvent event = new NotificationEvent("AD_UPDATED", editor.getUserId(), contextData);
 
-        String routingKey = "notification.event.ad_updated";
+    String routingKey = "notification.event.ad_updated";
 
-        publisher.publishEvent(event, routingKey);
-    }
+    publisher.publishEvent(event, routingKey);
+  }
 }

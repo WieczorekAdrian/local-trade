@@ -14,42 +14,32 @@ import java.util.UUID;
 
 @Component
 public class AdUtilsIntegrationTests {
-    private final CategoryRepository categoryRepository;
-    private final UsersRepository usersRepository;
-    private final AdvertisementRepository advertisementRepository;
+  private final CategoryRepository categoryRepository;
+  private final UsersRepository usersRepository;
+  private final AdvertisementRepository advertisementRepository;
 
-    public AdUtilsIntegrationTests(CategoryRepository categoryRepository, UsersRepository usersRepository, AdvertisementRepository advertisementRepository) {
-        this.categoryRepository = categoryRepository;
-        this.usersRepository = usersRepository;
-        this.advertisementRepository = advertisementRepository;
-    }
-    public AdvertisementEntity createAdWithUserAndCategoryAutomaticRoleUser(String title, String description, BigDecimal price) {
-        CategoryEntity categoryEntity = categoryRepository.save(CategoryUtils.createCategoryForIntegrationTests());
-        UsersEntity user = usersRepository.save(UserUtils.createUserRoleUser());
-        return advertisementRepository.save(AdvertisementEntity.builder()
-                .title(title)
-                .description(description)
-                .price(price)
-                .active(true)
-                .location("location test")
-                .user(user)
-                .categoryEntity(categoryEntity)
-                .advertisementId(UUID.randomUUID())
-                .favoritedByUsers(new HashSet<>())
-                .build());
-    }
+  public AdUtilsIntegrationTests(CategoryRepository categoryRepository,
+      UsersRepository usersRepository, AdvertisementRepository advertisementRepository) {
+    this.categoryRepository = categoryRepository;
+    this.usersRepository = usersRepository;
+    this.advertisementRepository = advertisementRepository;
+  }
 
-    public AdvertisementEntity createIntegrationAd(UsersEntity user, CategoryEntity categoryEntity) {
-        return advertisementRepository.save(AdvertisementEntity.builder()
-                .title("test")
-                .description("test")
-                .price(BigDecimal.TEN)
-                .active(true)
-                .location("test")
-                .user(user)
-                .categoryEntity(categoryEntity)
-                .advertisementId(UUID.randomUUID())
-                .favoritedByUsers(new HashSet<>())
-                .build());
-    }
+  public AdvertisementEntity createAdWithUserAndCategoryAutomaticRoleUser(String title,
+      String description, BigDecimal price) {
+    CategoryEntity categoryEntity =
+        categoryRepository.save(CategoryUtils.createCategoryForIntegrationTests());
+    UsersEntity user = usersRepository.save(UserUtils.createUserRoleUser());
+    return advertisementRepository
+        .save(AdvertisementEntity.builder().title(title).description(description).price(price)
+            .active(true).location("location test").user(user).categoryEntity(categoryEntity)
+            .advertisementId(UUID.randomUUID()).favoritedByUsers(new HashSet<>()).build());
+  }
+
+  public AdvertisementEntity createIntegrationAd(UsersEntity user, CategoryEntity categoryEntity) {
+    return advertisementRepository
+        .save(AdvertisementEntity.builder().title("test").description("test").price(BigDecimal.TEN)
+            .active(true).location("test").user(user).categoryEntity(categoryEntity)
+            .advertisementId(UUID.randomUUID()).favoritedByUsers(new HashSet<>()).build());
+  }
 }

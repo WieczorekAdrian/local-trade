@@ -37,216 +37,235 @@ import static org.mockito.Mockito.*;
 @ExtendWith(SpringExtension.class)
 public class ReviewServiceImplUnitTests {
 
-    @InjectMocks
-    private ReviewServiceImpl reviewService;
-    @Mock
-    private ReviewRepository reviewRepository;
-    @Mock
-    private TradeService tradeService;
-    @Mock
-    UsersService usersService;
-    @Mock
-    ReviewResponseDtoMapper reviewResponseDtoMapper;
-    @Mock
-    TradeRepository tradeRepository;
-    @Mock
-    UsersRepository usersRepository;
+  @InjectMocks
+  private ReviewServiceImpl reviewService;
+  @Mock
+  private ReviewRepository reviewRepository;
+  @Mock
+  private TradeService tradeService;
+  @Mock
+  UsersService usersService;
+  @Mock
+  ReviewResponseDtoMapper reviewResponseDtoMapper;
+  @Mock
+  TradeRepository tradeRepository;
+  @Mock
+  UsersRepository usersRepository;
 
-    private UserDetails userDetails;
-    private ReviewEntity reviewEntity;
-    private TradeEntity tradeEntity;
-    private UsersEntity reviewer;
-    private UsersEntity reviewedUser;
-    private ReviewResponseDto reviewResponseDto;
+  private UserDetails userDetails;
+  private ReviewEntity reviewEntity;
+  private TradeEntity tradeEntity;
+  private UsersEntity reviewer;
+  private UsersEntity reviewedUser;
+  private ReviewResponseDto reviewResponseDto;
 
+  @BeforeEach
+  void setUp() {
+    tradeEntity = new TradeEntity();
+    userDetails = mock(UserDetails.class);
+    reviewer = UserUtils.createUserRoleUser();
+    reviewedUser = UserUtils.createUserRoleUser();
+    UUID reviewId = UUID.randomUUID();
 
-    @BeforeEach
-    void setUp() {
-        tradeEntity = new TradeEntity();
-        userDetails = mock(UserDetails.class);
-        reviewer = UserUtils.createUserRoleUser();
-        reviewedUser = UserUtils.createUserRoleUser();
-        UUID reviewId = UUID.randomUUID();
+    reviewEntity = new ReviewEntity(1L, tradeEntity, reviewer, reviewedUser, reviewId, 5, "good");
 
-        reviewEntity = new ReviewEntity(1L, tradeEntity, reviewer, reviewedUser, reviewId, 5, "good");
+    reviewResponseDto =
+        new ReviewResponseDto(reviewEntity.getRating(), reviewEntity.getComment(), reviewId);
+  }
 
-        reviewResponseDto = new ReviewResponseDto(reviewEntity.getRating(), reviewEntity.getComment(), reviewId);
-    }
+  @Test
+  public void postReview_thenReviewIsPosted_returnsReview() {
+    tradeEntity.setSeller(reviewer);
+    tradeEntity.setBuyer(reviewedUser);
+    tradeEntity.setStatus(TradeStatus.COMPLETED);
+    reviewer.setId(2);
+    reviewer.setEmail("seller@seller.com");
+    reviewedUser.setId(1);
+    reviewedUser.setEmail("buyer@buyer.com");
 
-    @Test
-    public void postReview_thenReviewIsPosted_returnsReview() {
-        tradeEntity.setSeller(reviewer);
-        tradeEntity.setBuyer(reviewedUser);
-        tradeEntity.setStatus(TradeStatus.COMPLETED);
-        reviewer.setId(2);
-        reviewer.setEmail("seller@seller.com");
-        reviewedUser.setId(1);
-        reviewedUser.setEmail("buyer@buyer.com");
+    var reviewRequestDto =
+        new ReviewRequestDto(reviewEntity.getRating(), reviewEntity.getComment());
 
-        var reviewRequestDto = new ReviewRequestDto(reviewEntity.getRating(), reviewEntity.getComment());
+    when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
+    when(usersService.getCurrentUser(userDetails.getUsername())).thenReturn(reviewedUser);
+    when(tradeService.getTradeEntityByTradeId(tradeEntity.getTradeId())).thenReturn(tradeEntity);
+    when(reviewRepository.existsByTradeEntityAndReviewer(tradeEntity, reviewedUser))
+        .thenReturn(Boolean.FALSE);
+    when(reviewRepository.findAllByReviewedUser(reviewer)).thenReturn(List.of(reviewEntity));
+    when(reviewResponseDtoMapper.toDto(any(ReviewEntity.class))).thenReturn(reviewResponseDto);
 
-        when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
-        when(usersService.getCurrentUser(userDetails.getUsername())).thenReturn(reviewedUser);
-        when(tradeService.getTradeEntityByTradeId(tradeEntity.getTradeId())).thenReturn(tradeEntity);
-        when(reviewRepository.existsByTradeEntityAndReviewer(tradeEntity, reviewedUser)).thenReturn(Boolean.FALSE);
-        when(reviewRepository.findAllByReviewedUser(reviewer)).thenReturn(List.of(reviewEntity));
-        when(reviewResponseDtoMapper.toDto(any(ReviewEntity.class))).thenReturn(reviewResponseDto);
+    when(reviewRepository.save(any(ReviewEntity.class))).thenReturn(reviewEntity);
+    when(tradeService.saveTrade(any(TradeEntity.class))).thenReturn(tradeEntity);
+    when(usersService.saveUser(any(UsersEntity.class))).thenReturn(reviewedUser);
 
+    var result = reviewService.postReview(userDetails, tradeEntity.getTradeId(), reviewRequestDto);
 
-        when(reviewRepository.save(any(ReviewEntity.class))).thenReturn(reviewEntity);
-        when(tradeService.saveTrade(any(TradeEntity.class))).thenReturn(tradeEntity);
-        when(usersService.saveUser(any(UsersEntity.class))).thenReturn(reviewedUser);
+    ArgumentCaptor<ReviewEntity> reviewCaptor = ArgumentCaptor.forClass(ReviewEntity.class);
+    ArgumentCaptor<TradeEntity> tradeCaptor = ArgumentCaptor.forClass(TradeEntity.class);
+    ArgumentCaptor<UsersEntity> userCaptor = ArgumentCaptor.forClass(UsersEntity.class);
 
-        var result = reviewService.postReview(userDetails, tradeEntity.getTradeId(), reviewRequestDto);
+    verify(reviewRepository).save(reviewCaptor.capture());
+    verify(tradeService).saveTrade(tradeCaptor.capture());
+    verify(usersService).saveUser(userCaptor.capture());
 
-        ArgumentCaptor<ReviewEntity> reviewCaptor = ArgumentCaptor.forClass(ReviewEntity.class);
-        ArgumentCaptor<TradeEntity> tradeCaptor = ArgumentCaptor.forClass(TradeEntity.class);
-        ArgumentCaptor<UsersEntity> userCaptor = ArgumentCaptor.forClass(UsersEntity.class);
+    Assertions.assertNotNull(result);
+    Assertions.assertEquals(5, result.rating());
+    Assertions.assertEquals("good", result.comment());
 
-        verify(reviewRepository).save(reviewCaptor.capture());
-        verify(tradeService).saveTrade(tradeCaptor.capture());
-        verify(usersService).saveUser(userCaptor.capture());
+    ReviewEntity capturedReviewEntity = reviewCaptor.getValue();
+    Assertions.assertEquals(reviewedUser, capturedReviewEntity.getReviewer());
+    Assertions.assertEquals(reviewer, capturedReviewEntity.getReviewedUser());
+    Assertions.assertEquals(tradeEntity, capturedReviewEntity.getTradeEntity());
 
+    TradeEntity capturedTradeEntity = tradeCaptor.getValue();
+    Assertions.assertTrue(capturedTradeEntity.isBuyerLeftReview());
+    Assertions.assertFalse(capturedTradeEntity.isSellerLeftReview());
 
-        Assertions.assertNotNull(result);
-        Assertions.assertEquals(5, result.rating());
-        Assertions.assertEquals("good", result.comment());
+    UsersEntity capturedUser = userCaptor.getValue();
+    Assertions.assertEquals(reviewer, capturedUser);
+    Assertions.assertEquals(1, capturedUser.getRatingCount());
+    Assertions.assertEquals(5.0, capturedUser.getAverageRating());
 
-        ReviewEntity capturedReviewEntity = reviewCaptor.getValue();
-        Assertions.assertEquals(reviewedUser, capturedReviewEntity.getReviewer());
-        Assertions.assertEquals(reviewer, capturedReviewEntity.getReviewedUser());
-        Assertions.assertEquals(tradeEntity, capturedReviewEntity.getTradeEntity());
+    verify(reviewRepository, times(1)).save(any(ReviewEntity.class));
+    verify(tradeService, times(1)).saveTrade(any(TradeEntity.class));
+    verify(usersService, times(1)).saveUser(any(UsersEntity.class));
+  }
 
-        TradeEntity capturedTradeEntity = tradeCaptor.getValue();
-        Assertions.assertTrue(capturedTradeEntity.isBuyerLeftReview());
-        Assertions.assertFalse(capturedTradeEntity.isSellerLeftReview());
+  @Test
+  public void postReview_thenUserIsNotFound_throwsUserNotFoundException() {
+    var reviewRequestDto =
+        new ReviewRequestDto(reviewEntity.getRating(), reviewEntity.getComment());
 
-        UsersEntity capturedUser = userCaptor.getValue();
-        Assertions.assertEquals(reviewer, capturedUser);
-        Assertions.assertEquals(1, capturedUser.getRatingCount());
-        Assertions.assertEquals(5.0, capturedUser.getAverageRating());
+    when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
+    when(usersService.getCurrentUser(userDetails.getUsername()))
+        .thenThrow(UserNotFoundException.class);
 
-        verify(reviewRepository, times(1)).save(any(ReviewEntity.class));
-        verify(tradeService, times(1)).saveTrade(any(TradeEntity.class));
-        verify(usersService, times(1)).saveUser(any(UsersEntity.class));
-    }
+    Assertions.assertThrows(UserNotFoundException.class,
+        () -> reviewService.postReview(userDetails, tradeEntity.getTradeId(), reviewRequestDto));
 
-    @Test
-    public void postReview_thenUserIsNotFound_throwsUserNotFoundException() {
-        var reviewRequestDto = new ReviewRequestDto(reviewEntity.getRating(), reviewEntity.getComment());
+    verify(reviewRepository, never()).save(any(ReviewEntity.class));
+    verify(tradeService, never()).saveTrade(any(TradeEntity.class));
+    verify(usersService, never()).saveUser(any(UsersEntity.class));
+  }
 
-        when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
-        when(usersService.getCurrentUser(userDetails.getUsername())).thenThrow(UserNotFoundException.class);
+  @Test
+  public void postReview_thenTradeIsNotFound_throwsEntityNotFoundException() {
+    var reviewRequestDto =
+        new ReviewRequestDto(reviewEntity.getRating(), reviewEntity.getComment());
 
-        Assertions.assertThrows(UserNotFoundException.class, () -> reviewService.postReview(userDetails, tradeEntity.getTradeId(), reviewRequestDto));
+    when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
+    when(usersService.getCurrentUser(userDetails.getUsername())).thenReturn(reviewedUser);
+    when(tradeService.getTradeEntityByTradeId(tradeEntity.getTradeId()))
+        .thenThrow(EntityNotFoundException.class);
 
-        verify(reviewRepository, never()).save(any(ReviewEntity.class));
-        verify(tradeService, never()).saveTrade(any(TradeEntity.class));
-        verify(usersService, never()).saveUser(any(UsersEntity.class));
-    }
+    Assertions.assertThrows(EntityNotFoundException.class,
+        () -> reviewService.postReview(userDetails, tradeEntity.getTradeId(), reviewRequestDto));
 
-    @Test
-    public void postReview_thenTradeIsNotFound_throwsEntityNotFoundException() {
-        var reviewRequestDto = new ReviewRequestDto(reviewEntity.getRating(), reviewEntity.getComment());
+    verify(reviewRepository, never()).save(any(ReviewEntity.class));
+    verify(usersService, never()).saveUser(any(UsersEntity.class));
+    verify(tradeService, never()).saveTrade(any(TradeEntity.class));
+  }
 
-        when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
-        when(usersService.getCurrentUser(userDetails.getUsername())).thenReturn(reviewedUser);
-        when(tradeService.getTradeEntityByTradeId(tradeEntity.getTradeId())).thenThrow(EntityNotFoundException.class);
+  @Test
+  public void postReview_thenUserIsTheSameAs_throwsEntityNotFoundException() {
+    var stranger = UserUtils.createUserRoleUser();
+    stranger.setId(999);
+    stranger.setEmail("imnotapartofthistrade@gmail.com");
+    var reviewRequestDto =
+        new ReviewRequestDto(reviewEntity.getRating(), reviewEntity.getComment());
+    tradeEntity.setStatus(TradeStatus.COMPLETED);
 
-        Assertions.assertThrows(EntityNotFoundException.class, () -> reviewService.postReview(userDetails, tradeEntity.getTradeId(), reviewRequestDto));
+    tradeEntity.setSeller(stranger);
+    tradeEntity.setBuyer(stranger);
 
-        verify(reviewRepository, never()).save(any(ReviewEntity.class));
-        verify(usersService, never()).saveUser(any(UsersEntity.class));
-        verify(tradeService, never()).saveTrade(any(TradeEntity.class));
-    }
+    when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
+    when(usersService.getCurrentUser(userDetails.getUsername())).thenReturn(reviewedUser);
+    when(tradeService.getTradeEntityByTradeId(tradeEntity.getTradeId())).thenReturn(tradeEntity);
 
-    @Test
-    public void postReview_thenUserIsTheSameAs_throwsEntityNotFoundException() {
-        var stranger = UserUtils.createUserRoleUser();
-        stranger.setId(999);
-        stranger.setEmail("imnotapartofthistrade@gmail.com");
-        var reviewRequestDto = new ReviewRequestDto(reviewEntity.getRating(), reviewEntity.getComment());
-        tradeEntity.setStatus(TradeStatus.COMPLETED);
+    Assertions.assertThrows(TradeAccessDenied.class,
+        () -> reviewService.postReview(userDetails, tradeEntity.getTradeId(), reviewRequestDto));
 
-        tradeEntity.setSeller(stranger);
-        tradeEntity.setBuyer(stranger);
+    verify(reviewRepository, never()).save(any(ReviewEntity.class));
+    verify(usersService, never()).saveUser(any(UsersEntity.class));
+    verify(tradeService, never()).saveTrade(any(TradeEntity.class));
+  }
 
-        when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
-        when(usersService.getCurrentUser(userDetails.getUsername())).thenReturn(reviewedUser);
-        when(tradeService.getTradeEntityByTradeId(tradeEntity.getTradeId())).thenReturn(tradeEntity);
+  @Test
+  public void postReview_thenTradeStatusIsNotComplete_throwsSecurityException() {
+    var reviewRequestDto =
+        new ReviewRequestDto(reviewEntity.getRating(), reviewEntity.getComment());
+    tradeEntity.setSeller(reviewedUser);
+    tradeEntity.setStatus(TradeStatus.CANCELLED);
 
-        Assertions.assertThrows(TradeAccessDenied.class, () -> reviewService.postReview(userDetails, tradeEntity.getTradeId(), reviewRequestDto));
+    when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
+    when(usersService.getCurrentUser(userDetails.getUsername())).thenReturn(reviewedUser);
+    when(tradeService.getTradeEntityByTradeId(tradeEntity.getTradeId())).thenReturn(tradeEntity);
 
-        verify(reviewRepository, never()).save(any(ReviewEntity.class));
-        verify(usersService, never()).saveUser(any(UsersEntity.class));
-        verify(tradeService, never()).saveTrade(any(TradeEntity.class));
-    }
-    @Test
-    public void postReview_thenTradeStatusIsNotComplete_throwsSecurityException() {
-        var reviewRequestDto = new ReviewRequestDto(reviewEntity.getRating(), reviewEntity.getComment());
-        tradeEntity.setSeller(reviewedUser);
-        tradeEntity.setStatus(TradeStatus.CANCELLED);
+    Assertions.assertThrows(GlobalConflictException.class,
+        () -> reviewService.postReview(userDetails, tradeEntity.getTradeId(), reviewRequestDto));
 
-        when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
-        when(usersService.getCurrentUser(userDetails.getUsername())).thenReturn(reviewedUser);
-        when(tradeService.getTradeEntityByTradeId(tradeEntity.getTradeId())).thenReturn(tradeEntity);
+    verify(reviewRepository, never()).save(any(ReviewEntity.class));
+    verify(usersService, never()).saveUser(any(UsersEntity.class));
+    verify(tradeService, never()).saveTrade(any(TradeEntity.class));
 
-        Assertions.assertThrows(GlobalConflictException.class, () -> reviewService.postReview(userDetails, tradeEntity.getTradeId(), reviewRequestDto));
+  }
 
-        verify(reviewRepository, never()).save(any(ReviewEntity.class));
-        verify(usersService, never()).saveUser(any(UsersEntity.class));
-        verify(tradeService, never()).saveTrade(any(TradeEntity.class));
+  @Test
+  public void postReview_thenReviewIsAlreadyPosted_throwsSecurityException() {
+    var reviewRequestDto =
+        new ReviewRequestDto(reviewEntity.getRating(), reviewEntity.getComment());
+    tradeEntity.setSeller(reviewedUser);
+    tradeEntity.setStatus(TradeStatus.COMPLETED);
+    when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
+    when(usersService.getCurrentUser(userDetails.getUsername())).thenReturn(reviewedUser);
+    when(tradeService.getTradeEntityByTradeId(tradeEntity.getTradeId())).thenReturn(tradeEntity);
+    when(reviewRepository.existsByTradeEntityAndReviewer(tradeEntity, reviewedUser))
+        .thenReturn(Boolean.TRUE);
 
-    }
+    Assertions.assertThrows(TradeReviewedGlobalConflictException.class,
+        () -> reviewService.postReview(userDetails, tradeEntity.getTradeId(), reviewRequestDto));
 
-    @Test
-    public void postReview_thenReviewIsAlreadyPosted_throwsSecurityException() {
-        var reviewRequestDto = new ReviewRequestDto(reviewEntity.getRating(), reviewEntity.getComment());
-        tradeEntity.setSeller(reviewedUser);
-        tradeEntity.setStatus(TradeStatus.COMPLETED);
-        when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
-        when(usersService.getCurrentUser(userDetails.getUsername())).thenReturn(reviewedUser);
-        when(tradeService.getTradeEntityByTradeId(tradeEntity.getTradeId())).thenReturn(tradeEntity);
-        when(reviewRepository.existsByTradeEntityAndReviewer(tradeEntity, reviewedUser)).thenReturn(Boolean.TRUE);
+    verify(reviewRepository, never()).save(any(ReviewEntity.class));
+    verify(usersService, never()).saveUser(any(UsersEntity.class));
+    verify(tradeService, never()).saveTrade(any(TradeEntity.class));
+  }
 
-        Assertions.assertThrows(TradeReviewedGlobalConflictException.class, () -> reviewService.postReview(userDetails, tradeEntity.getTradeId(), reviewRequestDto));
+  @Test
+  public void deleteReview_thenReviewIsDeleted() {
+    when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
+    when(usersService.getCurrentUser(userDetails.getUsername())).thenReturn(reviewedUser);
+    when(reviewRepository.findByReviewId(reviewEntity.getReviewId()))
+        .thenReturn(Optional.of(reviewEntity));
 
-        verify(reviewRepository, never()).save(any(ReviewEntity.class));
-        verify(usersService, never()).saveUser(any(UsersEntity.class));
-        verify(tradeService, never()).saveTrade(any(TradeEntity.class));
-    }
-    @Test
-    public void deleteReview_thenReviewIsDeleted() {
-        when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
-        when(usersService.getCurrentUser(userDetails.getUsername())).thenReturn(reviewedUser);
-        when(reviewRepository.findByReviewId(reviewEntity.getReviewId())).thenReturn(Optional.of(reviewEntity));
+    reviewService.deleteReviewByAdmin(userDetails, reviewEntity.getReviewId());
+    verify(reviewRepository, times(1)).delete(any(ReviewEntity.class));
 
-        reviewService.deleteReviewByAdmin(userDetails, reviewEntity.getReviewId());
-        verify(reviewRepository, times(1)).delete(any(ReviewEntity.class));
+  }
 
-    }
-    @Test
-    public void deleteReviewWithBadUser_thenReviewIsNotDeleted() {
-        when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
-        when(usersService.getCurrentUser(userDetails.getUsername())).thenThrow(UserNotFoundException.class);
+  @Test
+  public void deleteReviewWithBadUser_thenReviewIsNotDeleted() {
+    when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
+    when(usersService.getCurrentUser(userDetails.getUsername()))
+        .thenThrow(UserNotFoundException.class);
 
-        Assertions.assertThrows(UserNotFoundException.class, () -> reviewService.deleteReviewByAdmin(userDetails, reviewEntity.getReviewId()));
+    Assertions.assertThrows(UserNotFoundException.class,
+        () -> reviewService.deleteReviewByAdmin(userDetails, reviewEntity.getReviewId()));
 
-        verify(reviewRepository, never()).delete(any(ReviewEntity.class));
+    verify(reviewRepository, never()).delete(any(ReviewEntity.class));
 
-    }
-    @Test
-    public void deleteReviewButReviewIsNotPresent_throwsEntityException() {
-        when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
-        when(usersService.getCurrentUser(userDetails.getUsername())).thenReturn(reviewedUser);
-        when(reviewRepository.findByReviewId(reviewEntity.getReviewId())).thenReturn(Optional.empty());
+  }
 
+  @Test
+  public void deleteReviewButReviewIsNotPresent_throwsEntityException() {
+    when(userDetails.getUsername()).thenReturn(reviewedUser.getUsername());
+    when(usersService.getCurrentUser(userDetails.getUsername())).thenReturn(reviewedUser);
+    when(reviewRepository.findByReviewId(reviewEntity.getReviewId())).thenReturn(Optional.empty());
 
-        Assertions.assertThrows(EntityNotFoundException.class, () -> reviewService.deleteReviewByAdmin(userDetails, reviewEntity.getReviewId()));
+    Assertions.assertThrows(EntityNotFoundException.class,
+        () -> reviewService.deleteReviewByAdmin(userDetails, reviewEntity.getReviewId()));
 
-        verify(reviewRepository, never()).delete(any(ReviewEntity.class));
+    verify(reviewRepository, never()).delete(any(ReviewEntity.class));
 
-    }
+  }
 
 }
-

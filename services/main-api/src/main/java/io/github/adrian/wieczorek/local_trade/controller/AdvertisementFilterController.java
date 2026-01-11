@@ -13,24 +13,26 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 
-
 @RestController
 @RequestMapping("/advertisements")
 @RequiredArgsConstructor
 public class AdvertisementFilterController {
 
-    private final AdvertisementFilterService advertisementFilterService;
+  private final AdvertisementFilterService advertisementFilterService;
 
-    @GetMapping("/search")
-    @Operation(summary = "Filter advertisements", description = "Sortowanie po polu \", allowableValues = {\"PRICE\",\"TITLE\",\"CREATED_AT} , Kierunek Sortowania SortDirection allowableValues = ASC,DESC")
-    public ResponseEntity<Page<ResponseAdvertisementDto>> filterAndPageAdvertisements(
-            @RequestParam (required = false) Integer categoryId ,
-            @RequestParam(required = false)BigDecimal minPrice,
-            @RequestParam(required = false)BigDecimal maxPrice,
-            @RequestParam(required = false,name= "title") String titleFilter,
-            @RequestParam(required = false)String location,
-            @RequestParam(required = false)Boolean active, @PageableDefault Pageable pageable) {
-        AdvertisementFilterDto filterDto = new AdvertisementFilterDto(categoryId,minPrice,maxPrice,location,titleFilter,active);
-        return ResponseEntity.ok(advertisementFilterService.filterAndPageAdvertisements(filterDto, pageable));
-    }
+  @GetMapping("/search")
+  @Operation(summary = "Filter advertisements",
+      description = "Sortowanie po polu \", allowableValues = {\"PRICE\",\"TITLE\",\"CREATED_AT} , Kierunek Sortowania SortDirection allowableValues = ASC,DESC")
+  public ResponseEntity<Page<ResponseAdvertisementDto>> filterAndPageAdvertisements(
+      @RequestParam(required = false) Integer categoryId,
+      @RequestParam(required = false) BigDecimal minPrice,
+      @RequestParam(required = false) BigDecimal maxPrice,
+      @RequestParam(required = false, name = "title") String titleFilter,
+      @RequestParam(required = false) String location,
+      @RequestParam(required = false) Boolean active, @PageableDefault Pageable pageable) {
+    AdvertisementFilterDto filterDto =
+        new AdvertisementFilterDto(categoryId, minPrice, maxPrice, location, titleFilter, active);
+    return ResponseEntity
+        .ok(advertisementFilterService.filterAndPageAdvertisements(filterDto, pageable));
+  }
 }

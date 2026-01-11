@@ -9,7 +9,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface AdvertisementFilterService {
-    Specification<AdvertisementEntity> getSpecification(AdvertisementFilterDto filter);
-    @Transactional(readOnly = true)
-    Page<ResponseAdvertisementDto> filterAndPageAdvertisements(AdvertisementFilterDto advertisementFilterDto, Pageable pageable);
+  Specification<AdvertisementEntity> getSpecification(AdvertisementFilterDto filter);
+
+  @Transactional(readOnly = true)
+  Page<ResponseAdvertisementDto> filterAndPageAdvertisements(
+      AdvertisementFilterDto advertisementFilterDto, Pageable pageable);
 }

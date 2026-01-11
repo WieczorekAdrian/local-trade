@@ -12,11 +12,13 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface TradeResponseDtoMapper {
 
-    @Mapping(source = "buyer",target = "buyerSimpleDto")
-    @Mapping(source = "seller",target = "sellerSimpleDto")
-    @Mapping(source = "advertisementEntity", target = "simpleAdvertisementResponseDto")
-    TradeResponseDto tradeToTradeResponseDto(TradeEntity tradeEntity);
+  @Mapping(source = "buyer", target = "buyerSimpleDto")
+  @Mapping(source = "seller", target = "sellerSimpleDto")
+  @Mapping(source = "advertisementEntity", target = "simpleAdvertisementResponseDto")
+  TradeResponseDto tradeToTradeResponseDto(TradeEntity tradeEntity);
 
-    SimpleUserResponseDto toSimpleUserDto(UsersEntity usersEntity);
-    SimpleAdvertisementResponseDto toSimpleAdvertisementResponseDto(AdvertisementEntity advertisementEntity);
+  SimpleUserResponseDto toSimpleUserDto(UsersEntity usersEntity);
+
+  SimpleAdvertisementResponseDto toSimpleAdvertisementResponseDto(
+      AdvertisementEntity advertisementEntity);
 }

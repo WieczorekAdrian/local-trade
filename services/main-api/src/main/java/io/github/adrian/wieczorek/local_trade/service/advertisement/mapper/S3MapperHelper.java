@@ -13,21 +13,22 @@ import java.util.List;
 @RequiredArgsConstructor
 public class S3MapperHelper {
 
-    private final S3Service s3Service;
+  private final S3Service s3Service;
 
-    @Named("mapImagesToUrls")
-    public List<String> toFullUrls(List<ImageEntity> entities) {
-        if (entities == null) return List.of();
-        return entities.stream()
-                .map(img -> s3Service.generatePresignedUrl(img.getKey(), Duration.ofHours(1)))
-                .toList();
-    }
+  @Named("mapImagesToUrls")
+  public List<String> toFullUrls(List<ImageEntity> entities) {
+    if (entities == null)
+      return List.of();
+    return entities.stream()
+        .map(img -> s3Service.generatePresignedUrl(img.getKey(), Duration.ofHours(1))).toList();
+  }
 
-    @Named("mapImagesToThumbnailUrls")
-    public List<String> toThumbnailUrls(List<ImageEntity> entities) {
-        if (entities == null) return List.of();
-        return entities.stream()
-                .map(img -> s3Service.generatePresignedUrl(img.getThumbnailKey(),Duration.ofHours(1)))
-                .toList();
-    }
+  @Named("mapImagesToThumbnailUrls")
+  public List<String> toThumbnailUrls(List<ImageEntity> entities) {
+    if (entities == null)
+      return List.of();
+    return entities.stream()
+        .map(img -> s3Service.generatePresignedUrl(img.getThumbnailKey(), Duration.ofHours(1)))
+        .toList();
+  }
 }
