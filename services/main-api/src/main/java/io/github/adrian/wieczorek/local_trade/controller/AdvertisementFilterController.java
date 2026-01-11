@@ -7,7 +7,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.SortDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +31,9 @@ public class AdvertisementFilterController {
       @RequestParam(required = false) BigDecimal maxPrice,
       @RequestParam(required = false, name = "title") String titleFilter,
       @RequestParam(required = false) String location,
-      @RequestParam(required = false) Boolean active, @PageableDefault Pageable pageable) {
+      @RequestParam(required = false) Boolean active,
+      @SortDefault(sort = "createdAt", direction = Sort.Direction.DESC)
+      @PageableDefault(size = 20) Pageable pageable) {
     AdvertisementFilterDto filterDto =
         new AdvertisementFilterDto(categoryId, minPrice, maxPrice, location, titleFilter, active);
     return ResponseEntity

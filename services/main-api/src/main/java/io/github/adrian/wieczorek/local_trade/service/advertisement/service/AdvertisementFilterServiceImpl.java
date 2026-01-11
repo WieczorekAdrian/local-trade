@@ -38,7 +38,7 @@ public class AdvertisementFilterServiceImpl implements AdvertisementFilterServic
       }
 
       if (filter.categoryId() != null) {
-        predicates.add(cb.equal(root.get("category").get("id"), filter.categoryId()));
+        predicates.add(cb.equal(root.get("categoryEntity").get("id"), filter.categoryId()));
       }
 
       if (filter.minPrice() != null) {
