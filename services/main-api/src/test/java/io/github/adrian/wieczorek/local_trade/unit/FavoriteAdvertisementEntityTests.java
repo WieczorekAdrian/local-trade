@@ -4,8 +4,8 @@ import io.github.adrian.wieczorek.local_trade.exceptions.UserNotFoundException;
 import io.github.adrian.wieczorek.local_trade.service.advertisement.AdvertisementEntity;
 import io.github.adrian.wieczorek.local_trade.service.user.UsersEntity;
 import io.github.adrian.wieczorek.local_trade.service.advertisement.AdvertisementRepository;
-import io.github.adrian.wieczorek.local_trade.service.user.UsersRepository;
 import io.github.adrian.wieczorek.local_trade.service.advertisement.service.FavoriteAdvertisementServiceImpl;
+import io.github.adrian.wieczorek.local_trade.service.user.service.UsersService;
 import io.github.adrian.wieczorek.local_trade.testutils.AdUtils;
 import io.github.adrian.wieczorek.local_trade.testutils.UserUtils;
 import jakarta.persistence.EntityNotFoundException;
@@ -15,7 +15,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Optional;
 
@@ -26,7 +25,7 @@ import static org.mockito.Mockito.*;
 public class FavoriteAdvertisementEntityTests {
 
   @Mock
-  UsersRepository usersRepository;
+  UsersService usersService;
   @Mock
   AdvertisementRepository advertisementRepository;
   @InjectMocks
@@ -36,13 +35,11 @@ public class FavoriteAdvertisementEntityTests {
   public void whenAddingFavoriteAdvertisement_thenSuccess() {
     UsersEntity user = UserUtils.createUserRoleUser();
     AdvertisementEntity ad = AdUtils.createAdvertisement();
-    UserDetails mockUserDetails = mock(UserDetails.class);
-    when(mockUserDetails.getUsername()).thenReturn(user.getEmail());
-    when(usersRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(usersService.getCurrentUser(user.getEmail())).thenReturn(user);
     when(advertisementRepository.findByAdvertisementId(ad.getAdvertisementId()))
         .thenReturn(Optional.of(ad));
 
-    favoriteAdvertisementService.addFavoriteAdvertisement(mockUserDetails, ad.getAdvertisementId());
+    favoriteAdvertisementService.addFavoriteAdvertisement(user.getEmail(), ad.getAdvertisementId());
     verify(advertisementRepository).save(ad);
     assertTrue(ad.getFavoritedByUsers().contains(user));
     assertEquals(1, ad.getFavoritedByUsers().size());
@@ -53,12 +50,10 @@ public class FavoriteAdvertisementEntityTests {
     UsersEntity user = UserUtils.createUserRoleUser();
     user.setName("user");
     AdvertisementEntity ad = AdUtils.createAdvertisement();
-    UserDetails mockUserDetails = mock(UserDetails.class);
-    when(mockUserDetails.getUsername()).thenReturn(user.getEmail());
-    when(usersRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
+    when(usersService.getCurrentUser(user.getEmail())).thenThrow(UserNotFoundException.class);
 
     assertThrows(UserNotFoundException.class, () -> {
-      favoriteAdvertisementService.addFavoriteAdvertisement(mockUserDetails,
+      favoriteAdvertisementService.addFavoriteAdvertisement(user.getEmail(),
           ad.getAdvertisementId());
     });
     verify(advertisementRepository, never()).save(any(AdvertisementEntity.class));
@@ -68,14 +63,12 @@ public class FavoriteAdvertisementEntityTests {
   public void whenAddingFavoriteAdvertisement_thenAdvertisementNotFound() {
     UsersEntity user = UserUtils.createUserRoleUser();
     AdvertisementEntity ad = AdUtils.createAdvertisement();
-    UserDetails mockUserDetails = mock(UserDetails.class);
-    when(mockUserDetails.getUsername()).thenReturn(user.getEmail());
-    when(usersRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(usersService.getCurrentUser(user.getEmail())).thenReturn(user);
     when(advertisementRepository.findByAdvertisementId(ad.getAdvertisementId()))
         .thenReturn(Optional.empty());
 
     assertThrows(EntityNotFoundException.class, () -> {
-      favoriteAdvertisementService.addFavoriteAdvertisement(mockUserDetails,
+      favoriteAdvertisementService.addFavoriteAdvertisement(user.getEmail(),
           ad.getAdvertisementId());
     });
     verify(advertisementRepository, never()).save(any(AdvertisementEntity.class));
@@ -92,13 +85,11 @@ public class FavoriteAdvertisementEntityTests {
     assertEquals(1, ad.getFavoritedByUsers().size());
     assertTrue(ad.getFavoritedByUsers().contains(user));
 
-    when(usersRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(usersService.getCurrentUser(user.getEmail())).thenReturn(user);
     when(advertisementRepository.findByAdvertisementId(ad.getAdvertisementId()))
         .thenReturn(Optional.of(ad));
-    UserDetails mockUserDetails = mock(UserDetails.class);
-    when(mockUserDetails.getUsername()).thenReturn(user.getEmail());
 
-    favoriteAdvertisementService.deleteFavoriteAdvertisement(mockUserDetails,
+    favoriteAdvertisementService.deleteFavoriteAdvertisement(user.getEmail(),
         ad.getAdvertisementId());
     verify(advertisementRepository).save(ad);
     Assertions.assertFalse(ad.getFavoritedByUsers().contains(user));
@@ -110,12 +101,10 @@ public class FavoriteAdvertisementEntityTests {
     UsersEntity user = UserUtils.createUserRoleUser();
     AdvertisementEntity ad = AdUtils.createAdvertisement();
 
-    when(usersRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
-    UserDetails mockUserDetails = mock(UserDetails.class);
-    when(mockUserDetails.getUsername()).thenReturn(user.getEmail());
+    when(usersService.getCurrentUser(user.getEmail())).thenThrow(UserNotFoundException.class);
 
     assertThrows(UserNotFoundException.class, () -> {
-      favoriteAdvertisementService.deleteFavoriteAdvertisement(mockUserDetails,
+      favoriteAdvertisementService.deleteFavoriteAdvertisement(user.getEmail(),
           ad.getAdvertisementId());
     });
     verify(advertisementRepository, never()).save(any(AdvertisementEntity.class));
@@ -126,14 +115,12 @@ public class FavoriteAdvertisementEntityTests {
     UsersEntity user = UserUtils.createUserRoleUser();
     AdvertisementEntity ad = AdUtils.createAdvertisement();
 
-    when(usersRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    when(usersService.getCurrentUser(user.getEmail())).thenReturn(user);
     when(advertisementRepository.findByAdvertisementId(ad.getAdvertisementId()))
         .thenReturn(Optional.empty());
-    UserDetails mockUserDetails = mock(UserDetails.class);
-    when(mockUserDetails.getUsername()).thenReturn(user.getEmail());
 
     assertThrows(EntityNotFoundException.class, () -> {
-      favoriteAdvertisementService.deleteFavoriteAdvertisement(mockUserDetails,
+      favoriteAdvertisementService.deleteFavoriteAdvertisement(user.getEmail(),
           ad.getAdvertisementId());
     });
     verify(advertisementRepository, never()).save(any(AdvertisementEntity.class));
