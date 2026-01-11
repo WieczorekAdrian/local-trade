@@ -21,32 +21,33 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class S3ImageController {
 
-    private final S3Service s3Service;
-    private final S3Finder s3Finder;
+  private final S3Service s3Service;
+  private final S3Finder s3Finder;
 
+  @PostMapping("/{id}")
+  @Operation(description = "Pass the uuid of advertisement and image file that we want to upload")
+  public ResponseEntity<ImageDto> upload(@PathVariable UUID id,
+      @RequestParam("file") MultipartFile file) throws IOException {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(ImageMapper.ImagetoImageDto(s3Service.uploadFile(id, file)));
+  }
 
-    @PostMapping("/{id}")
-    @Operation(description = "Pass the uuid of advertisement and image file that we want to upload")
-    public ResponseEntity<ImageDto> upload(@PathVariable UUID id, @RequestParam("file") MultipartFile file) throws IOException {
-     return ResponseEntity.status(HttpStatus.CREATED).body(ImageMapper.ImagetoImageDto(s3Service.uploadFile(id,file)));
-    }
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> delete(@PathVariable UUID id) {
+    s3Service.deleteFile(id);
+    return ResponseEntity.noContent().build();
+  }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        s3Service.deleteFile(id);
-        return ResponseEntity.noContent().build();
-    }
+  @GetMapping()
+  @Operation(description = "Get list of all images that are saved for one advertisement")
+  public ResponseEntity<List<ImageDto>> getAllImages(@RequestParam UUID advertisementId) {
+    return ResponseEntity.ok(s3Finder.listFiles(advertisementId));
+  }
 
-    @GetMapping()
-    @Operation(description = "Get list of all images that are saved for one advertisement")
-    public ResponseEntity<List<ImageDto>> getAllImages(@RequestParam UUID advertisementId) {
-       return ResponseEntity.ok(s3Finder.listFiles(advertisementId));
-    }
-
-    @GetMapping("/presigned/{key}")
-    @Operation(description = "Get the presigned key for image when given key for image")
-    public ResponseEntity<String> getPresignedImage(@PathVariable String key) {
-        return ResponseEntity.ok(s3Service.generatePresignedUrl(key, Duration.ofMinutes(5)));
-    }
+  @GetMapping("/presigned/{key}")
+  @Operation(description = "Get the presigned key for image when given key for image")
+  public ResponseEntity<String> getPresignedImage(@PathVariable String key) {
+    return ResponseEntity.ok(s3Service.generatePresignedUrl(key, Duration.ofMinutes(5)));
+  }
 
 }

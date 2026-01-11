@@ -6,5 +6,5 @@ import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
 public interface ReviewResponseDtoMapper {
-    ReviewResponseDto toDto(ReviewEntity reviewEntity);
+  ReviewResponseDto toDto(ReviewEntity reviewEntity);
 }

@@ -16,17 +16,27 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface AdvertisementRepository extends JpaRepository<AdvertisementEntity, Integer> {
-    List<AdvertisementEntity> findByCategoryEntityId(Integer categoryId);
-    Optional<AdvertisementEntity> findByUserAndId(UsersEntity user, Integer advertisementId);
-    Page<AdvertisementEntity> findAll(Specification<AdvertisementEntity> specification, Pageable pageable);
-    Optional<AdvertisementEntity> findByAdvertisementId(UUID advertisementId);
-    List<AdvertisementEntity> user(UsersEntity user);
-    long countByCategoryEntityId(Integer categoryId);
-    AdvertisementEntity findByUser(UsersEntity user);
-    AdvertisementEntity findByTitle(String title);
+  List<AdvertisementEntity> findByCategoryEntityId(Integer categoryId);
 
-    @Modifying(clearAutomatically = true)
-    @Transactional
-    @Query(value = "UPDATE advertisement_entity SET active = false WHERE active = true AND created_at < :cutoffDate", nativeQuery = true)
-    int deactivateExpiredAds(@Param("cutoffDate") LocalDateTime cutoffDate);
+  Optional<AdvertisementEntity> findByUserAndId(UsersEntity user, Integer advertisementId);
+
+  Page<AdvertisementEntity> findAll(Specification<AdvertisementEntity> specification,
+      Pageable pageable);
+
+  Optional<AdvertisementEntity> findByAdvertisementId(UUID advertisementId);
+
+  List<AdvertisementEntity> user(UsersEntity user);
+
+  long countByCategoryEntityId(Integer categoryId);
+
+  AdvertisementEntity findByUser(UsersEntity user);
+
+  AdvertisementEntity findByTitle(String title);
+
+  @Modifying(clearAutomatically = true)
+  @Transactional
+  @Query(
+      value = "UPDATE advertisement_entity SET active = false WHERE active = true AND created_at < :cutoffDate",
+      nativeQuery = true)
+  int deactivateExpiredAds(@Param("cutoffDate") LocalDateTime cutoffDate);
 }

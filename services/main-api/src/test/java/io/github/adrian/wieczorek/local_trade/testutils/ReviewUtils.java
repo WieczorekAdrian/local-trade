@@ -7,16 +7,12 @@ import io.github.adrian.wieczorek.local_trade.service.user.UsersEntity;
 import java.util.UUID;
 
 public class ReviewUtils {
-    public static ReviewEntity createTestReview(TradeEntity tradeEntity, UsersEntity reviewer, UsersEntity reviewedUser) {
-        return ReviewEntity.builder()
-                .reviewId(UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"))
+  public static ReviewEntity createTestReview(TradeEntity tradeEntity, UsersEntity reviewer,
+      UsersEntity reviewedUser) {
+    return ReviewEntity.builder().reviewId(UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"))
 
-                .tradeEntity(tradeEntity)
-                .reviewer(reviewer)
-                .reviewedUser(reviewedUser)
+        .tradeEntity(tradeEntity).reviewer(reviewer).reviewedUser(reviewedUser)
 
-                .rating(5)
-                .comment("Test comment everything is ok")
-                .build();
-    }
+        .rating(5).comment("Test comment everything is ok").build();
+  }
 }

@@ -12,30 +12,31 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
 public class UsersController {
 
-    private final UsersService usersService;
-    private final UsersFinder usersFinder;
+  private final UsersService usersService;
+  private final UsersFinder usersFinder;
 
-    @GetMapping("/me")
-    public ResponseEntity<UserDashboardResponseDto> getLoggedInUser(@AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        return ResponseEntity.ok(usersFinder.getLoggedInUser(userDetails.getUsername()));
+  @GetMapping("/me")
+  public ResponseEntity<UserDashboardResponseDto> getLoggedInUser(
+      @AuthenticationPrincipal UserDetails userDetails) {
+    if (userDetails == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
+    return ResponseEntity.ok(usersFinder.getLoggedInUser(userDetails.getUsername()));
+  }
 
-    @PutMapping("/me")
-    public ResponseEntity<UserResponseDto> updateCurrentUser(@RequestBody UpdateUserDto updateUserDto, @AuthenticationPrincipal UserDetails currentUser) {
-        if (currentUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        String email = currentUser.getUsername();
-        UserResponseDto updatedUser = usersService.updateCurrentUser(updateUserDto,email);
-        return ResponseEntity.ok(updatedUser);
+  @PutMapping("/me")
+  public ResponseEntity<UserResponseDto> updateCurrentUser(@RequestBody UpdateUserDto updateUserDto,
+      @AuthenticationPrincipal UserDetails currentUser) {
+    if (currentUser == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
+    String email = currentUser.getUsername();
+    UserResponseDto updatedUser = usersService.updateCurrentUser(updateUserDto, email);
+    return ResponseEntity.ok(updatedUser);
+  }
 }

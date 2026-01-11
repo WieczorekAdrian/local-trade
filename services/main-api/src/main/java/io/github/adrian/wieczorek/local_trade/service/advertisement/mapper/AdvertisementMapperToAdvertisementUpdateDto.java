@@ -6,9 +6,11 @@ import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
 public class AdvertisementMapperToAdvertisementUpdateDto {
-    public static AdvertisementUpdateDto toDto(AdvertisementEntity advertisementEntity) {
-        return new AdvertisementUpdateDto(advertisementEntity.getPrice(), advertisementEntity.getTitle(), advertisementEntity.getDescription(), advertisementEntity.getLocation(), advertisementEntity.getImage());
+  public static AdvertisementUpdateDto toDto(AdvertisementEntity advertisementEntity) {
+    return new AdvertisementUpdateDto(advertisementEntity.getPrice(),
+        advertisementEntity.getTitle(), advertisementEntity.getDescription(),
+        advertisementEntity.getLocation(), advertisementEntity.getImage());
 
-    }
+  }
 
 }

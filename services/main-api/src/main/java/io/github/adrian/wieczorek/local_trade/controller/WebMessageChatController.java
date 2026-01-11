@@ -16,34 +16,37 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
-import java.util.Locale;
-
 
 @Controller
 @RequiredArgsConstructor
 public class WebMessageChatController {
-    private final ChatMessageService chatMessageService;
-    private final SimpMessagingTemplate simpMessagingTemplate;
+  private final ChatMessageService chatMessageService;
+  private final SimpMessagingTemplate simpMessagingTemplate;
 
+  @MessageMapping("/chat.sendMessage.public")
+  @SendTo("/topic/public")
+  public ChatMessageEntity sendPublicMessage(@Payload ChatMessageEntity chatMessageEntity) {
+    chatMessageService.save(chatMessageEntity);
+    return chatMessageEntity;
+  }
 
-    @MessageMapping("/chat.sendMessage.public")
-    @SendTo("/topic/public")
-    public ChatMessageEntity sendPublicMessage(@Payload ChatMessageEntity chatMessageEntity) {
-        chatMessageService.save(chatMessageEntity);
-        return chatMessageEntity;
-    }
+  @MessageMapping("/chat.typing/{recipientEmail}")
+  public void handleTyping(@DestinationVariable String recipientEmail, @Payload TypingDto input,
+      Principal principal) {
+    TypingDto status = new TypingDto(principal.getName(), input.isTyping());
+    simpMessagingTemplate.convertAndSendToUser(recipientEmail.toLowerCase(), "/queue/typing",
+        status);
+  }
 
-    @MessageMapping("/chat.typing/{recipientEmail}")
-    public void handleTyping(@DestinationVariable String recipientEmail, @Payload TypingDto input, Principal principal) {
-        TypingDto status = new TypingDto(principal.getName(), input.isTyping());
-        simpMessagingTemplate.convertAndSendToUser(recipientEmail.toLowerCase(), "/queue/typing", status);
-    }
-
-    @MessageMapping("/chat.sendMessage.private/{recipient}")
-    @Operation(summary = "Take logged in user and send recipient Username to send message")
-    public void sendPrivateMessage(@Payload ChatMessagePayload chatMessage, @DestinationVariable("recipient") String recipient, @AuthenticationPrincipal Principal principal) {
-        ChatMessageDto newChatMessage = chatMessageService.createAndSaveMessageForPrivateUser(chatMessage,principal,recipient);
-        simpMessagingTemplate.convertAndSendToUser(recipient,"/queue/messages", newChatMessage);
-        simpMessagingTemplate.convertAndSendToUser(principal.getName(), "/queue/messages", newChatMessage);
-    }
+  @MessageMapping("/chat.sendMessage.private/{recipient}")
+  @Operation(summary = "Take logged in user and send recipient Username to send message")
+  public void sendPrivateMessage(@Payload ChatMessagePayload chatMessage,
+      @DestinationVariable("recipient") String recipient,
+      @AuthenticationPrincipal Principal principal) {
+    ChatMessageDto newChatMessage =
+        chatMessageService.createAndSaveMessageForPrivateUser(chatMessage, principal, recipient);
+    simpMessagingTemplate.convertAndSendToUser(recipient, "/queue/messages", newChatMessage);
+    simpMessagingTemplate.convertAndSendToUser(principal.getName(), "/queue/messages",
+        newChatMessage);
+  }
 }

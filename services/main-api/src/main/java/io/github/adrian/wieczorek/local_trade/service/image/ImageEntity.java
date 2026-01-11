@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+
 @Entity
 @Table(name = "images")
 @Data
@@ -15,30 +16,30 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ImageEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "advertisementEntity_id", nullable = false)
-    private AdvertisementEntity advertisementEntity;
-    @Column(name = "\"key\"", length = 1024)
-    private String key;
-    @Column(length = 1024)
-    private String url;
-    @Column(name = "thumbnail_key", length = 1024)
-    private String thumbnailKey;
-    @Column(length = 1024)
-    private String thumbnailUrl;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "advertisementEntity_id", nullable = false)
+  private AdvertisementEntity advertisementEntity;
+  @Column(name = "\"key\"", length = 1024)
+  private String key;
+  @Column(length = 1024)
+  private String url;
+  @Column(name = "thumbnail_key", length = 1024)
+  private String thumbnailKey;
+  @Column(length = 1024)
+  private String thumbnailUrl;
 
-    private Integer sortOrder;
+  private Integer sortOrder;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+  private LocalDateTime createdAt = LocalDateTime.now();
 
-    private String contentType;
+  private String contentType;
 
-    private Long size;
+  private Long size;
 
-    @Column(name = "image_id")
-    private UUID imageId = UUID.randomUUID();
+  @Column(name = "image_id")
+  private UUID imageId = UUID.randomUUID();
 }

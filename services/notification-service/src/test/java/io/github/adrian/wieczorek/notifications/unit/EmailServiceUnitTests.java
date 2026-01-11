@@ -23,98 +23,91 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
-
 @ExtendWith(MockitoExtension.class)
 class EmailServiceUnitTests {
 
-    @Mock
-    private JavaMailSender mailSender;
+  @Mock
+  private JavaMailSender mailSender;
 
-    @Mock
-    private TemplateEngine templateEngine;
+  @Mock
+  private TemplateEngine templateEngine;
 
-    @Mock
-    private MimeMessage mockMimeMessage;
+  @Mock
+  private MimeMessage mockMimeMessage;
 
-    @InjectMocks
-    private EmailServiceImpl emailService;
+  @InjectMocks
+  private EmailServiceImpl emailService;
 
-    @Captor
-    private ArgumentCaptor<Context> contextCaptor;
+  @Captor
+  private ArgumentCaptor<Context> contextCaptor;
 
-    @Captor
-    private ArgumentCaptor<MimeMessage> mimeMessageCaptor;
+  @Captor
+  private ArgumentCaptor<MimeMessage> mimeMessageCaptor;
 
+  @BeforeEach
+  void setUp() {
 
-    @BeforeEach
-    void setUp() {
+    when(mailSender.createMimeMessage()).thenReturn(mockMimeMessage);
 
-        when(mailSender.createMimeMessage()).thenReturn(mockMimeMessage);
+    ReflectionTestUtils.setField(emailService, "fromEmail", "test@example.com");
+    ReflectionTestUtils.setField(emailService, "advertisementUrl", "http://example.com/ad/");
+    ReflectionTestUtils.setField(emailService, "userProfileLink", "http://example.com/profile/");
+  }
 
-        ReflectionTestUtils.setField(emailService, "fromEmail", "test@example.com");
-        ReflectionTestUtils.setField(emailService, "advertisementUrl", "http://example.com/ad/");
-        ReflectionTestUtils.setField(emailService, "userProfileLink", "http://example.com/profile/");
-    }
+  @Test
+  void sendAdvertIsAddedEmail_shouldSendEmailSuccessfully() throws Exception {
+    // ARRANGE
+    String to = "user@test.com";
+    String userName = "TestUser";
+    String adId = "123";
+    String adTitle = "Super Ogłoszenie";
+    String htmlBody = "<html>Test</html>";
 
+    when(templateEngine.process(eq("advert-created-email"), any(Context.class)))
+        .thenReturn(htmlBody);
 
-    @Test
-    void sendAdvertIsAddedEmail_shouldSendEmailSuccessfully() throws Exception {
-        // ARRANGE
-        String to = "user@test.com";
-        String userName = "TestUser";
-        String adId = "123";
-        String adTitle = "Super Ogłoszenie";
-        String htmlBody = "<html>Test</html>";
+    emailService.sendAdvertIsAddedEmail(to, userName, adId, adTitle);
 
-        when(templateEngine.process(eq("advert-created-email"), any(Context.class)))
-                .thenReturn(htmlBody);
+    verify(templateEngine).process(eq("advert-created-email"), contextCaptor.capture());
 
-        emailService.sendAdvertIsAddedEmail(to, userName, adId, adTitle);
+    Context capturedContext = contextCaptor.getValue();
+    assertEquals(userName, capturedContext.getVariable("userName"));
+    assertEquals(adId, capturedContext.getVariable("adId"));
+    assertEquals(adTitle, capturedContext.getVariable("adTitle"));
 
-        verify(templateEngine).process(eq("advert-created-email"), contextCaptor.capture());
+    verify(mailSender, times(1)).send(mockMimeMessage);
+  }
 
-        Context capturedContext = contextCaptor.getValue();
-        assertEquals(userName, capturedContext.getVariable("userName"));
-        assertEquals(adId, capturedContext.getVariable("adId"));
-        assertEquals(adTitle, capturedContext.getVariable("adTitle"));
+  @Test
+  void sendAdvertIsAddedEmail_shouldThrowEmailNotSendException_whenSenderFails()
+      throws MailException, MessagingException {
+    when(templateEngine.process(anyString(), any(Context.class))).thenReturn("<html>Test</html>");
 
-        verify(mailSender, times(1)).send(mockMimeMessage);
-    }
+    doThrow(new MailException("Failed to connect") {}).when(mailSender).send(mockMimeMessage);
 
-    @Test
-    void sendAdvertIsAddedEmail_shouldThrowEmailNotSendException_whenSenderFails() throws MailException, MessagingException {
-        when(templateEngine.process(anyString(), any(Context.class)))
-                .thenReturn("<html>Test</html>");
+    assertThrows(EmailNotSendException.class, () -> {
+      emailService.sendAdvertIsAddedEmail("user@test.com", "TestUser", "123", "Tytuł");
+    });
 
-        doThrow(new MailException("Failed to connect") {
-        })
-                .when(mailSender).send(mockMimeMessage);
+    verify(mailSender, times(1)).send(mockMimeMessage);
+  }
 
-        assertThrows(EmailNotSendException.class, () -> {
-            emailService.sendAdvertIsAddedEmail("user@test.com", "TestUser", "123", "Tytuł");
-        });
+  @Test
+  void sendWelcomeEmail_shouldSendEmailSuccessfully() throws Exception {
+    String to = "new@user.com";
+    String userName = "NowyUżytkownik";
+    String htmlBody = "<html>Witaj!</html>";
 
-        verify(mailSender, times(1)).send(mockMimeMessage);
-    }
+    when(templateEngine.process(eq("user-registered"), any(Context.class))).thenReturn(htmlBody);
 
+    emailService.sendWelcomeEmail(to, userName);
 
-    @Test
-    void sendWelcomeEmail_shouldSendEmailSuccessfully() throws Exception {
-        String to = "new@user.com";
-        String userName = "NowyUżytkownik";
-        String htmlBody = "<html>Witaj!</html>";
+    verify(templateEngine).process(eq("user-registered"), contextCaptor.capture());
 
-        when(templateEngine.process(eq("user-registered"), any(Context.class)))
-                .thenReturn(htmlBody);
+    Context capturedContext = contextCaptor.getValue();
+    assertEquals(userName, capturedContext.getVariable("userName"));
+    assertEquals("http://example.com/profile/", capturedContext.getVariable("userProfileLink"));
 
-        emailService.sendWelcomeEmail(to, userName);
-
-        verify(templateEngine).process(eq("user-registered"), contextCaptor.capture());
-
-        Context capturedContext = contextCaptor.getValue();
-        assertEquals(userName, capturedContext.getVariable("userName"));
-        assertEquals("http://example.com/profile/", capturedContext.getVariable("userProfileLink"));
-
-        verify(mailSender, times(1)).send(mockMimeMessage);
-    }
+    verify(mailSender, times(1)).send(mockMimeMessage);
+  }
 }

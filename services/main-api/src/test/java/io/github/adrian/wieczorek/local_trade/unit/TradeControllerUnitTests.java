@@ -37,164 +37,146 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = TradeController.class)
 public class TradeControllerUnitTests {
 
-    @MockitoBean
-    JwtService jwtService;
-    @Autowired
-    private MockMvc mockMvc;
-    @MockitoBean
-    TradeService tradeService;
-    @MockitoBean
-    JpaMetamodelMappingContext jpaMetamodelMappingContext;
-    @MockitoBean
-    JwtBlacklistService jwtBlacklistService;
+  @MockitoBean
+  JwtService jwtService;
+  @Autowired
+  private MockMvc mockMvc;
+  @MockitoBean
+  TradeService tradeService;
+  @MockitoBean
+  JpaMetamodelMappingContext jpaMetamodelMappingContext;
+  @MockitoBean
+  JwtBlacklistService jwtBlacklistService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+  @Autowired
+  private ObjectMapper objectMapper;
 
-    private AdvertisementEntity mockAdvertisementEntity;
-    private SimpleUserResponseDto buyer;
-    private SimpleUserResponseDto seller;
-    private SimpleAdvertisementResponseDto simpleAdvertisementResponseDto;
+  private AdvertisementEntity mockAdvertisementEntity;
+  private SimpleUserResponseDto buyer;
+  private SimpleUserResponseDto seller;
+  private SimpleAdvertisementResponseDto simpleAdvertisementResponseDto;
 
-    @BeforeEach
-    public void setUp() {
-        mockAdvertisementEntity = AdUtils.createAdvertisement();
-        mockAdvertisementEntity.setAdvertisementId(UUID.randomUUID());
-        buyer = new SimpleUserResponseDto(1,"buyer@test.com");
-        seller = new SimpleUserResponseDto(2,"seller@test.com");
-        simpleAdvertisementResponseDto = new SimpleAdvertisementResponseDto(mockAdvertisementEntity.getAdvertisementId(), mockAdvertisementEntity.getTitle());
-    }
+  @BeforeEach
+  public void setUp() {
+    mockAdvertisementEntity = AdUtils.createAdvertisement();
+    mockAdvertisementEntity.setAdvertisementId(UUID.randomUUID());
+    buyer = new SimpleUserResponseDto(1, "buyer@test.com");
+    seller = new SimpleUserResponseDto(2, "seller@test.com");
+    simpleAdvertisementResponseDto = new SimpleAdvertisementResponseDto(
+        mockAdvertisementEntity.getAdvertisementId(), mockAdvertisementEntity.getTitle());
+  }
 
-    @Test
-    @WithMockUser("buyer@test.com")
-    public void tradeInitiation_thenTradeIsInitiated_returnsTradeResponse() throws Exception {
-        TradeInitiationRequestDto mockRequest = new TradeInitiationRequestDto(BigDecimal.valueOf(2), mockAdvertisementEntity.getAdvertisementId());
-        TradeResponseDto mockResponse = new TradeResponseDto(UUID.randomUUID(),1L,
-                TradeStatus.PROPOSED,
-                BigDecimal.valueOf(2),
-                LocalDateTime.now(),
-                false,
-                false,
-                buyer,
-                seller,
-                simpleAdvertisementResponseDto
-                );
+  @Test
+  @WithMockUser("buyer@test.com")
+  public void tradeInitiation_thenTradeIsInitiated_returnsTradeResponse() throws Exception {
+    TradeInitiationRequestDto mockRequest = new TradeInitiationRequestDto(BigDecimal.valueOf(2),
+        mockAdvertisementEntity.getAdvertisementId());
+    TradeResponseDto mockResponse =
+        new TradeResponseDto(UUID.randomUUID(), 1L, TradeStatus.PROPOSED, BigDecimal.valueOf(2),
+            LocalDateTime.now(), false, false, buyer, seller, simpleAdvertisementResponseDto);
 
-        when(tradeService.tradeInitiation(any(UserDetails.class),(eq(mockRequest)))).thenReturn(mockResponse);
+    when(tradeService.tradeInitiation(any(UserDetails.class), (eq(mockRequest))))
+        .thenReturn(mockResponse);
 
-        String requestDtoToString =  objectMapper.writeValueAsString(mockRequest);
+    String requestDtoToString = objectMapper.writeValueAsString(mockRequest);
 
-        mockMvc.perform(post("/trades")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestDtoToString)
-                        .with(csrf()))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(mockResponse.id()))
-                .andExpect(jsonPath("$.status").value("PROPOSED"))
-                .andExpect(jsonPath("$.proposedPrice").value(mockResponse.proposedPrice()))
-                .andExpect(jsonPath("$.createdAt").isNotEmpty())
-                .andExpect(jsonPath("$.sellerMarkedCompleted").value(mockResponse.sellerMarkedCompleted()))
-                .andExpect(jsonPath("$.buyerMarkedCompleted").value(mockResponse.buyerMarkedCompleted()));
+    mockMvc
+        .perform(post("/trades").contentType(MediaType.APPLICATION_JSON).content(requestDtoToString)
+            .with(csrf()))
+        .andExpect(status().isCreated())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.id").value(mockResponse.id()))
+        .andExpect(jsonPath("$.status").value("PROPOSED"))
+        .andExpect(jsonPath("$.proposedPrice").value(mockResponse.proposedPrice()))
+        .andExpect(jsonPath("$.createdAt").isNotEmpty())
+        .andExpect(jsonPath("$.sellerMarkedCompleted").value(mockResponse.sellerMarkedCompleted()))
+        .andExpect(jsonPath("$.buyerMarkedCompleted").value(mockResponse.buyerMarkedCompleted()));
 
-        verify(tradeService, times(1)).tradeInitiation(any(UserDetails.class), any(TradeInitiationRequestDto.class));
+    verify(tradeService, times(1)).tradeInitiation(any(UserDetails.class),
+        any(TradeInitiationRequestDto.class));
 
+  }
 
-    }
-    @Test
-    @WithMockUser("buyer@test.com")
-    public void tradeInitiationWithBadRequest_returnsBadRequest() throws Exception {
-        TradeInitiationRequestDto mockRequest = new TradeInitiationRequestDto(BigDecimal.valueOf(2),null);
+  @Test
+  @WithMockUser("buyer@test.com")
+  public void tradeInitiationWithBadRequest_returnsBadRequest() throws Exception {
+    TradeInitiationRequestDto mockRequest =
+        new TradeInitiationRequestDto(BigDecimal.valueOf(2), null);
 
-        String requestDtoToString =  objectMapper.writeValueAsString(mockRequest);
+    String requestDtoToString = objectMapper.writeValueAsString(mockRequest);
 
-        mockMvc.perform(post("/trades")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestDtoToString)
-                        .with(csrf()))
-                .andExpect(status().isBadRequest());
+    mockMvc.perform(post("/trades").contentType(MediaType.APPLICATION_JSON)
+        .content(requestDtoToString).with(csrf())).andExpect(status().isBadRequest());
 
-        verify(tradeService,never()).tradeInitiation(any(UserDetails.class),any(TradeInitiationRequestDto.class));
+    verify(tradeService, never()).tradeInitiation(any(UserDetails.class),
+        any(TradeInitiationRequestDto.class));
 
+  }
 
-    }
-    @Test
-    @WithMockUser("buyer@test.com")
-    public void updateTradeStatusToCompleted_thenTradeStatusIsUpdated() throws Exception {
-        TradeStatusRequestDto tradeStatusRequestDto = new TradeStatusRequestDto(TradeStatus.COMPLETED);
+  @Test
+  @WithMockUser("buyer@test.com")
+  public void updateTradeStatusToCompleted_thenTradeStatusIsUpdated() throws Exception {
+    TradeStatusRequestDto tradeStatusRequestDto = new TradeStatusRequestDto(TradeStatus.COMPLETED);
 
-        TradeResponseDto mockResponse = new TradeResponseDto(UUID.randomUUID(),1L,
-                TradeStatus.COMPLETED,
-                BigDecimal.valueOf(2),
-                LocalDateTime.now(),
-                false,
-                false,
-                buyer,
-                seller,
-                simpleAdvertisementResponseDto
-        );
+    TradeResponseDto mockResponse =
+        new TradeResponseDto(UUID.randomUUID(), 1L, TradeStatus.COMPLETED, BigDecimal.valueOf(2),
+            LocalDateTime.now(), false, false, buyer, seller, simpleAdvertisementResponseDto);
 
-        when(tradeService.updateTradeStatus(any(UserDetails.class),any(Long.class),any(TradeStatus.class))).thenReturn(mockResponse);
+    when(tradeService.updateTradeStatus(any(UserDetails.class), any(Long.class),
+        any(TradeStatus.class))).thenReturn(mockResponse);
 
-        String tradeStatusDtoToString =  objectMapper.writeValueAsString(tradeStatusRequestDto);
+    String tradeStatusDtoToString = objectMapper.writeValueAsString(tradeStatusRequestDto);
 
-        mockMvc.perform(patch("/trades/" + mockResponse.id())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(tradeStatusDtoToString)
-                        .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(mockResponse.id()))
-                .andExpect(jsonPath("$.status").value("COMPLETED"));
+    mockMvc
+        .perform(patch("/trades/" + mockResponse.id()).contentType(MediaType.APPLICATION_JSON)
+            .content(tradeStatusDtoToString).with(csrf()))
+        .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.id").value(mockResponse.id()))
+        .andExpect(jsonPath("$.status").value("COMPLETED"));
 
-        verify(tradeService, times(1)).updateTradeStatus(any(UserDetails.class), any(Long.class), any(TradeStatus.class));
+    verify(tradeService, times(1)).updateTradeStatus(any(UserDetails.class), any(Long.class),
+        any(TradeStatus.class));
 
-    }
-    @Test
-    @WithMockUser("buyer@test.com")
-    public void updateTradeStatusToCancelled_thenTradeStatusIsUpdated() throws Exception {
-        TradeStatusRequestDto tradeStatusRequestDto = new TradeStatusRequestDto(TradeStatus.CANCELLED);
+  }
 
-        TradeResponseDto mockResponse = new TradeResponseDto(UUID.randomUUID(),1L,
-                TradeStatus.CANCELLED,
-                BigDecimal.valueOf(2),
-                LocalDateTime.now(),
-                true,
-                true,
-                buyer,
-                seller,
-                simpleAdvertisementResponseDto
-        );
+  @Test
+  @WithMockUser("buyer@test.com")
+  public void updateTradeStatusToCancelled_thenTradeStatusIsUpdated() throws Exception {
+    TradeStatusRequestDto tradeStatusRequestDto = new TradeStatusRequestDto(TradeStatus.CANCELLED);
 
-        when(tradeService.updateTradeStatus(any(UserDetails.class),any(Long.class),any(TradeStatus.class))).thenReturn(mockResponse);
+    TradeResponseDto mockResponse =
+        new TradeResponseDto(UUID.randomUUID(), 1L, TradeStatus.CANCELLED, BigDecimal.valueOf(2),
+            LocalDateTime.now(), true, true, buyer, seller, simpleAdvertisementResponseDto);
 
-        String tradeStatusDtoToString =  objectMapper.writeValueAsString(tradeStatusRequestDto);
+    when(tradeService.updateTradeStatus(any(UserDetails.class), any(Long.class),
+        any(TradeStatus.class))).thenReturn(mockResponse);
 
-        mockMvc.perform(patch("/trades/" + mockResponse.id())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(tradeStatusDtoToString)
-                        .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(mockResponse.id()))
-                .andExpect(jsonPath("$.status").value("CANCELLED"));
+    String tradeStatusDtoToString = objectMapper.writeValueAsString(tradeStatusRequestDto);
 
-        verify(tradeService, times(1)).updateTradeStatus(any(UserDetails.class), any(Long.class), any(TradeStatus.class));
+    mockMvc
+        .perform(patch("/trades/" + mockResponse.id()).contentType(MediaType.APPLICATION_JSON)
+            .content(tradeStatusDtoToString).with(csrf()))
+        .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.id").value(mockResponse.id()))
+        .andExpect(jsonPath("$.status").value("CANCELLED"));
 
-    }
-    @Test
-    @WithMockUser("buyer@test.com")
-    public void updateTradeStatusToCompletedAndTradeStatusIsNull_thenTradeStatusIsNotUpdated_returnsBadRequest() throws Exception {
-        TradeStatusRequestDto tradeStatusRequestDto = new TradeStatusRequestDto(null);
+    verify(tradeService, times(1)).updateTradeStatus(any(UserDetails.class), any(Long.class),
+        any(TradeStatus.class));
 
-        String tradeStatusDtoToString =  objectMapper.writeValueAsString(tradeStatusRequestDto);
+  }
 
-        mockMvc.perform(patch("/trades/" + 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(tradeStatusDtoToString)
-                        .with(csrf()))
-                .andExpect(status().isBadRequest());
+  @Test
+  @WithMockUser("buyer@test.com")
+  public void updateTradeStatusToCompletedAndTradeStatusIsNull_thenTradeStatusIsNotUpdated_returnsBadRequest()
+      throws Exception {
+    TradeStatusRequestDto tradeStatusRequestDto = new TradeStatusRequestDto(null);
 
-        verify(tradeService, never ()).updateTradeStatus(any(UserDetails.class),any(Long.class),any(TradeStatus.class));
-    }
+    String tradeStatusDtoToString = objectMapper.writeValueAsString(tradeStatusRequestDto);
+
+    mockMvc.perform(patch("/trades/" + 1L).contentType(MediaType.APPLICATION_JSON)
+        .content(tradeStatusDtoToString).with(csrf())).andExpect(status().isBadRequest());
+
+    verify(tradeService, never()).updateTradeStatus(any(UserDetails.class), any(Long.class),
+        any(TradeStatus.class));
+  }
 }

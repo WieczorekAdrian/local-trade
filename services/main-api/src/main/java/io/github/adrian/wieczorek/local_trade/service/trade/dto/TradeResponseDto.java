@@ -8,15 +8,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public record TradeResponseDto(
-        UUID tradeId,
-        Long id,
-        TradeStatus status,
-        BigDecimal proposedPrice,
-        LocalDateTime createdAt,
-        boolean buyerMarkedCompleted,
-        boolean sellerMarkedCompleted,
-        SimpleUserResponseDto buyerSimpleDto,
-        SimpleUserResponseDto sellerSimpleDto,
-        SimpleAdvertisementResponseDto simpleAdvertisementResponseDto
-) {}
+public record TradeResponseDto(UUID tradeId, Long id, TradeStatus status, BigDecimal proposedPrice,
+		LocalDateTime createdAt, boolean buyerMarkedCompleted, boolean sellerMarkedCompleted,
+		SimpleUserResponseDto buyerSimpleDto, SimpleUserResponseDto sellerSimpleDto,
+		SimpleAdvertisementResponseDto simpleAdvertisementResponseDto) {
+}

@@ -15,14 +15,14 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 public class RefreshTokenEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-    private String token;
-    private Instant expires;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private int id;
+  private String token;
+  private Instant expires;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "users_id", nullable = false) 
-    private UsersEntity usersEntity;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "users_id", nullable = false)
+  private UsersEntity usersEntity;
 
 }

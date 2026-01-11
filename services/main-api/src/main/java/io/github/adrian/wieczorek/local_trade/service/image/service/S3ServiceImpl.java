@@ -31,149 +31,143 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class S3ServiceImpl implements S3Service {
 
-    private final S3Client s3Client;
-    private final String bucketName = "advertisements";
-    private final ImageRepository imageRepository;
-    private final S3Presigner s3Presigner;
-    private final AdvertisementService advertisementService;
-    private final TransactionTemplate transactionTemplate;
+  private final S3Client s3Client;
+  private final String bucketName = "advertisements";
+  private final ImageRepository imageRepository;
+  private final S3Presigner s3Presigner;
+  private final AdvertisementService advertisementService;
+  private final TransactionTemplate transactionTemplate;
 
+  @Override
+  public PutObjectRequest putObject(String bucketName, String key, @Nullable String content) {
+    return PutObjectRequest.builder().bucket(bucketName).key(key).contentType(content).build();
+  }
 
+  @Override
+  public ImageEntity uploadFile(UUID advertisementId, MultipartFile file) throws IOException {
+    AdvertisementEntity ad = advertisementService.getCurrentAdvertisement(advertisementId);
 
-    @Override
-    public PutObjectRequest putObject(String bucketName, String key, @Nullable String content) {
-        return  PutObjectRequest.builder()
-                .bucket(bucketName)
-                .key(key)
-                .contentType(content)
-                .build();
+    String fileName =
+        UUID.randomUUID() + "." + FilenameUtils.getExtension(file.getOriginalFilename());
+    String key = ad.getId() + "/full/" + fileName;
+
+    byte[] thumbnail = generateThumbnail(file);
+
+    String thumbnailKey = (thumbnail != null) ? ad.getId() + "/thumbnail/" + fileName : null;
+
+    try {
+      if (thumbnail != null) {
+        PutObjectRequest thumbnailRequest = putObject(bucketName, thumbnailKey, "image/jpeg"); // Thumbnail
+                                                                                               // to
+                                                                                               // zawsze
+                                                                                               // JPG
+                                                                                               // u
+                                                                                               // Ciebie
+        s3Client.putObject(thumbnailRequest, RequestBody.fromBytes(thumbnail));
+      }
+
+      PutObjectRequest putObjectRequest = putObject(bucketName, key, file.getContentType());
+      s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
+
+    } catch (Exception e) {
+      if (thumbnailKey != null)
+        silentDelete(thumbnailKey);
+      silentDelete(key);
+      throw new RuntimeException("S3 Upload failed", e);
     }
 
-    @Override
-    public ImageEntity uploadFile(UUID advertisementId, MultipartFile file) throws IOException {
-        AdvertisementEntity ad = advertisementService.getCurrentAdvertisement(advertisementId);
+    ImageEntity savedEntity;
 
-        String fileName = UUID.randomUUID() + "." + FilenameUtils.getExtension(file.getOriginalFilename());
-        String key = ad.getId() + "/full/" + fileName;
+    try {
+      savedEntity = transactionTemplate.execute(status -> {
+        ImageEntity imageEntity = new ImageEntity();
+        imageEntity.setAdvertisementEntity(ad);
+        imageEntity.setKey(key);
+        imageEntity.setContentType(file.getContentType());
+        imageEntity.setSize(file.getSize());
 
-        byte[] thumbnail = generateThumbnail(file);
+        imageEntity.setThumbnailKey(thumbnailKey);
+        imageEntity.setImageId(UUID.randomUUID());
 
-        String thumbnailKey = (thumbnail != null) ? ad.getId() + "/thumbnail/" + fileName : null;
-
-        try {
-            if (thumbnail != null) {
-                PutObjectRequest thumbnailRequest = putObject(bucketName, thumbnailKey, "image/jpeg"); // Thumbnail to zawsze JPG u Ciebie
-                s3Client.putObject(thumbnailRequest, RequestBody.fromBytes(thumbnail));
-            }
-
-            PutObjectRequest putObjectRequest = putObject(bucketName, key, file.getContentType());
-            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(file.getBytes()));
-
-        } catch (Exception e) {
-            if (thumbnailKey != null) silentDelete(thumbnailKey);
-            silentDelete(key);
-            throw new RuntimeException("S3 Upload failed", e);
-        }
-
-        ImageEntity savedEntity;
-
-        try {
-            savedEntity = transactionTemplate.execute(status -> {
-                ImageEntity imageEntity = new ImageEntity();
-                imageEntity.setAdvertisementEntity(ad);
-                imageEntity.setKey(key);
-                imageEntity.setContentType(file.getContentType());
-                imageEntity.setSize(file.getSize());
-
-                imageEntity.setThumbnailKey(thumbnailKey);
-                imageEntity.setImageId(UUID.randomUUID());
-
-                return imageRepository.save(imageEntity);
-            });
-        } catch (Exception dbException) {
-            log.error("Database save failed. Rolling back transaction", dbException);
-            silentDelete(key);
-            if (thumbnailKey != null) {
-                silentDelete(thumbnailKey);
-            }
-            throw dbException;
-        }
-
-        if (savedEntity != null) {
-            savedEntity.setUrl(generatePresignedUrl(key, Duration.ofHours(1)));
-            if (thumbnailKey != null) {
-                savedEntity.setThumbnailUrl(generatePresignedUrl(thumbnailKey, Duration.ofHours(1)));
-            }
-        }
-        return savedEntity;
+        return imageRepository.save(imageEntity);
+      });
+    } catch (Exception dbException) {
+      log.error("Database save failed. Rolling back transaction", dbException);
+      silentDelete(key);
+      if (thumbnailKey != null) {
+        silentDelete(thumbnailKey);
+      }
+      throw dbException;
     }
 
-    private void silentDelete (String key) {
-        try {
-            s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucketName).key(key).build());
-        }catch (Exception e){
-            log.error("Failed to rollback S3 file: {}", key, e);
-        }
+    if (savedEntity != null) {
+      savedEntity.setUrl(generatePresignedUrl(key, Duration.ofHours(1)));
+      if (thumbnailKey != null) {
+        savedEntity.setThumbnailUrl(generatePresignedUrl(thumbnailKey, Duration.ofHours(1)));
+      }
+    }
+    return savedEntity;
+  }
+
+  private void silentDelete(String key) {
+    try {
+      s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucketName).key(key).build());
+    } catch (Exception e) {
+      log.error("Failed to rollback S3 file: {}", key, e);
+    }
+  }
+
+  @Override
+  public void deleteFile(UUID imageId) {
+
+    String[] keysToDelete = transactionTemplate.execute(status -> {
+      ImageEntity imageEntity = imageRepository.findByImageId(imageId);
+      if (imageEntity == null)
+        return null;
+
+      String k = imageEntity.getKey();
+      String tk = imageEntity.getThumbnailKey();
+
+      imageRepository.delete(imageEntity);
+      imageRepository.flush();
+
+      return new String[] {k, tk};
+    });
+
+    if (keysToDelete != null) {
+      silentDelete(keysToDelete[0]);
+      silentDelete(keysToDelete[1]);
+    }
+  }
+
+  @Override
+  public byte[] generateThumbnail(MultipartFile file) throws IOException {
+    BufferedImage bufferedImage = ImageIO.read(file.getInputStream());
+    if (bufferedImage == null) {
+      log.warn("Uploaded file is not a valid image. Skipping thumbnail generation.");
+      return null;
     }
 
-    @Override
-    public void deleteFile(UUID imageId) {
+    BufferedImage thumb = Scalr.resize(bufferedImage, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC,
+        600, Scalr.OP_ANTIALIAS);
 
-        String[] keysToDelete = transactionTemplate.execute(status -> {
-            ImageEntity imageEntity = imageRepository.findByImageId(imageId);
-            if (imageEntity == null) return null;
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
 
-            String k = imageEntity.getKey();
-            String tk = imageEntity.getThumbnailKey();
+    ImageIO.write(thumb, "jpg", os);
 
-            imageRepository.delete(imageEntity);
-            imageRepository.flush();
+    return os.toByteArray();
+  }
 
-            return new String[]{k, tk};
-        });
-
-        if (keysToDelete != null) {
-            silentDelete(keysToDelete[0]);
-            silentDelete(keysToDelete[1]);
-        }
+  @Override
+  public String generatePresignedUrl(String key, Duration duration) {
+    if (key == null || key.isBlank()) {
+      log.warn("Image key is null or blank");
+      return null;
     }
-
-    @Override
-    public byte[] generateThumbnail(MultipartFile file) throws IOException {
-        BufferedImage bufferedImage = ImageIO.read(file.getInputStream());
-        if (bufferedImage == null) {
-            log.warn("Uploaded file is not a valid image. Skipping thumbnail generation.");
-            return null;
-        }
-
-        BufferedImage thumb = Scalr.resize(bufferedImage,
-                Scalr.Method.QUALITY,
-                Scalr.Mode.AUTOMATIC,
-                600,
-                Scalr.OP_ANTIALIAS);
-
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-
-        ImageIO.write(thumb, "jpg", os);
-
-        return os.toByteArray();
-    }
-
-    @Override
-    public String generatePresignedUrl(String key, Duration duration) {
-        if (key == null || key.isBlank()) {
-            log.warn("Image key is null or blank");
-            return null;
-        }
-        PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(
-                GetObjectPresignRequest.builder()
-                        .getObjectRequest(GetObjectRequest.builder()
-                                .bucket(bucketName)
-                                .key(key)
-                                .build())
-                        .signatureDuration(duration)
-                        .build()
-        );
-        return presignedRequest.url().toString();
-    }
+    PresignedGetObjectRequest presignedRequest =
+        s3Presigner.presignGetObject(GetObjectPresignRequest.builder()
+            .getObjectRequest(GetObjectRequest.builder().bucket(bucketName).key(key).build())
+            .signatureDuration(duration).build());
+    return presignedRequest.url().toString();
+  }
 }

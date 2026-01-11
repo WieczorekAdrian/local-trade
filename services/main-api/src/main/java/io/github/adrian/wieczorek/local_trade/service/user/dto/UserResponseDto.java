@@ -6,9 +6,9 @@ import lombok.Data;
 
 @Data
 public class UserResponseDto {
-    @NotBlank
-    @Email
-    public String email;
-    public String name;
-    public String password;
+  @NotBlank
+  @Email
+  public String email;
+  public String name;
+  public String password;
 }

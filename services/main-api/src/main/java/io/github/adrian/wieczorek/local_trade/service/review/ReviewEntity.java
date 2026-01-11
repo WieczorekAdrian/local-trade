@@ -15,25 +15,25 @@ import java.util.UUID;
 @Builder
 public class ReviewEntity {
 
-    @Id
-    @GeneratedValue
-    private Long id;
+  @Id
+  @GeneratedValue
+  private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "trade_id", nullable = false)
-    private TradeEntity tradeEntity;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "trade_id", nullable = false)
+  private TradeEntity tradeEntity;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reviewer_id", nullable = false)
-    private UsersEntity reviewer;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "reviewer_id", nullable = false)
+  private UsersEntity reviewer;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reviewed_user_id", nullable = false)
-    private UsersEntity reviewedUser;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "reviewed_user_id", nullable = false)
+  private UsersEntity reviewedUser;
 
-    private UUID reviewId =  UUID.randomUUID();
+  private UUID reviewId = UUID.randomUUID();
 
-    private Integer rating;
-    @Size(max = 500)
-    private String comment;
+  private Integer rating;
+  @Size(max = 500)
+  private String comment;
 }

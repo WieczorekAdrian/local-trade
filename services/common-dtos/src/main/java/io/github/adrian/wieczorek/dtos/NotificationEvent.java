@@ -12,10 +12,10 @@ import java.util.UUID;
 @Data
 public class NotificationEvent implements Serializable {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
-    private String eventType;
-    private UUID recipientUserId;
-    private Map<String, String> contextData;
+  @Serial
+  private static final long serialVersionUID = 1L;
+  private String eventType;
+  private UUID recipientUserId;
+  private Map<String, String> contextData;
 
 }

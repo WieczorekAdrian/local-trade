@@ -6,5 +6,5 @@ import org.mapstruct.Mapper;
 
 @Mapper
 public interface ReviewRequestDtoMapper {
-    ReviewRequestDto toDto(ReviewEntity reviewEntity);
+  ReviewRequestDto toDto(ReviewEntity reviewEntity);
 }

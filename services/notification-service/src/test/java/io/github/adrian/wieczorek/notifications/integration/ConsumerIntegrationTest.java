@@ -28,148 +28,133 @@ import static org.mockito.Mockito.*;
 @Testcontainers
 public class ConsumerIntegrationTest {
 
-    @Container
-    static RabbitMQContainer rabbitMQContainer = new RabbitMQContainer();
+  @Container
+  static RabbitMQContainer rabbitMQContainer = new RabbitMQContainer();
 
-    @DynamicPropertySource
-    static void configure(DynamicPropertyRegistry registry) {
-        registry.add("spring.rabbitmq.host", rabbitMQContainer::getHost);
-        registry.add("spring.rabbitmq.port", rabbitMQContainer::getAmqpPort);
-    }
+  @DynamicPropertySource
+  static void configure(DynamicPropertyRegistry registry) {
+    registry.add("spring.rabbitmq.host", rabbitMQContainer::getHost);
+    registry.add("spring.rabbitmq.port", rabbitMQContainer::getAmqpPort);
+  }
 
-    @Autowired
-    private RabbitTemplate rabbitTemplate;
+  @Autowired
+  private RabbitTemplate rabbitTemplate;
 
-    @MockitoBean
-    private EmailService emailService;
+  @MockitoBean
+  private EmailService emailService;
 
-    private final Map<String,String> context = Map.of(
-            "userName","Test User",
-            "userEmail","Test Email"
-            );
+  private final Map<String, String> context =
+      Map.of("userName", "Test User", "userEmail", "Test Email");
 
+  @Test
+  void whenAdIsCreated_thenEmailServiceIsCalledAndSent() {
+    var adId = UUID.randomUUID().toString();
+    Map<String, String> contextData = Map.of("userEmail", "test@example.com", "userName",
+        "Jan Testowy", "adId", adId, "adTitle", "Test Advert");
+    NotificationEvent event = new NotificationEvent("AD_CREATED", UUID.randomUUID(), contextData);
+    String routingKey = "notification.event.ad_created";
 
-    @Test
-    void whenAdIsCreated_thenEmailServiceIsCalledAndSent() {
-        var adId = UUID.randomUUID().toString();
-        Map<String, String> contextData = Map.of(
-                "userEmail", "test@example.com",
-                "userName", "Jan Testowy",
-                "adId", adId,
-                "adTitle", "Test Advert"
-        );
-        NotificationEvent event = new NotificationEvent(
-                "AD_CREATED", UUID.randomUUID(), contextData
-        );
-        String routingKey = "notification.event.ad_created";
+    rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE, routingKey, event);
 
-        rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE, routingKey, event);
+    await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+      verify(emailService, times(1)).sendAdvertIsAddedEmail("test@example.com", "Jan Testowy", adId,
+          "Test Advert");
+    });
+  }
 
-        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
-            verify(emailService, times(1))
-                    .sendAdvertIsAddedEmail("test@example.com", "Jan Testowy", adId, "Test Advert");
-        });
-    }
-    @Test
-    void whenAdIsCreated_thenEmailServiceIsCalledAndSent_throwsException() {
-        var adId = UUID.randomUUID().toString();
-        Map<String, String> contextData = Map.of(
-                "userEmail", "test@test.com",
-                "userName", "Jan Testowy",
-                "adId", adId,
-                "adTitle", "Test Advert DLQ"
-        );
-        NotificationEvent event = new NotificationEvent(
-                "AD_CREATED", UUID.randomUUID(), contextData
-        );
+  @Test
+  void whenAdIsCreated_thenEmailServiceIsCalledAndSent_throwsException() {
+    var adId = UUID.randomUUID().toString();
+    Map<String, String> contextData = Map.of("userEmail", "test@test.com", "userName",
+        "Jan Testowy", "adId", adId, "adTitle", "Test Advert DLQ");
+    NotificationEvent event = new NotificationEvent("AD_CREATED", UUID.randomUUID(), contextData);
 
-        doThrow(new EmailNotSendException("Testowy Błąd Wysyłki z Mocka", null))
-                .when(emailService)
-                .sendAdvertIsAddedEmail(anyString(), anyString(), anyString(), anyString());
+    doThrow(new EmailNotSendException("Testowy Błąd Wysyłki z Mocka", null)).when(emailService)
+        .sendAdvertIsAddedEmail(anyString(), anyString(), anyString(), anyString());
 
-        String routingKey = "notification.event.ad_created";
+    String routingKey = "notification.event.ad_created";
 
-        rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE, routingKey, event);
+    rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE, routingKey, event);
 
-        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+    await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
 
-            verify(emailService, times(1)).sendAdvertIsAddedEmail("test@test.com","Jan Testowy", adId, "Test Advert DLQ");
-            Object msgFromDLQ = rabbitTemplate.receiveAndConvert(RabbitMQConfig.DLQ_QUEUE,1000);
+      verify(emailService, times(1)).sendAdvertIsAddedEmail("test@test.com", "Jan Testowy", adId,
+          "Test Advert DLQ");
+      Object msgFromDLQ = rabbitTemplate.receiveAndConvert(RabbitMQConfig.DLQ_QUEUE, 1000);
 
-            Assertions.assertNotNull(msgFromDLQ);
-            Assertions.assertEquals(NotificationEvent.class, msgFromDLQ.getClass());
-            NotificationEvent dlqEvent = (NotificationEvent) msgFromDLQ;
-            Assertions.assertEquals(adId,dlqEvent.getContextData().get("adId"));
-            Assertions.assertEquals("Test Advert DLQ",dlqEvent.getContextData().get("adTitle"));
+      Assertions.assertNotNull(msgFromDLQ);
+      Assertions.assertEquals(NotificationEvent.class, msgFromDLQ.getClass());
+      NotificationEvent dlqEvent = (NotificationEvent) msgFromDLQ;
+      Assertions.assertEquals(adId, dlqEvent.getContextData().get("adId"));
+      Assertions.assertEquals("Test Advert DLQ", dlqEvent.getContextData().get("adTitle"));
 
-        });
+    });
 
-    }
-    @Test
-    public void whenUserIsCreated_thenEmailServiceIsCalledAndSent() {
+  }
 
-        NotificationEvent event = new NotificationEvent("USER_REGISTERED", UUID.randomUUID(), context);
+  @Test
+  public void whenUserIsCreated_thenEmailServiceIsCalledAndSent() {
 
-        String routingKey = "notification.event.user_registered";
+    NotificationEvent event = new NotificationEvent("USER_REGISTERED", UUID.randomUUID(), context);
 
-        rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE, routingKey, event);
+    String routingKey = "notification.event.user_registered";
 
-        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
-            verify(emailService, times(1)).sendWelcomeEmail("Test Email", "Test User");
+    rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE, routingKey, event);
 
-        });
-    }
-    @Test
-    public void whenUserIsCreatedButBadEvent_neverSendsEmail() {
+    await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+      verify(emailService, times(1)).sendWelcomeEmail("Test Email", "Test User");
 
-        NotificationEvent event = new NotificationEvent("UNKNOWN_EVENT", UUID.randomUUID(), context);
+    });
+  }
 
-        String routingKey = "notification.event.user_registered";
+  @Test
+  public void whenUserIsCreatedButBadEvent_neverSendsEmail() {
 
-        rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE, routingKey, event);
+    NotificationEvent event = new NotificationEvent("UNKNOWN_EVENT", UUID.randomUUID(), context);
 
-        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
-            verify(emailService, never()).sendWelcomeEmail("Test Email", "Test User");
-        });
-    }
+    String routingKey = "notification.event.user_registered";
 
-    @Test
-    public void whenUserIsCreated_thenEmailServiceIsCalledAndSendsEmail_throwsException() {
-        NotificationEvent event = new NotificationEvent("USER_REGISTERED", UUID.randomUUID(), context);
-        String routingKey = "notification.event.user_registered";
-        doThrow(new EmailNotSendException("Test Email", null)).when(emailService).sendWelcomeEmail("Test Email", "Test User");
-        rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE, routingKey, event);
-        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
-            verify(emailService, times(1)).sendWelcomeEmail("Test Email", "Test User");
-            Object dlqMsg = rabbitTemplate.receiveAndConvert(RabbitMQConfig.DLQ_QUEUE,1000);
-            Assertions.assertNotNull(dlqMsg);
-            Assertions.assertEquals(NotificationEvent.class, dlqMsg.getClass());
-            NotificationEvent dlqEvent = (NotificationEvent) dlqMsg;
-            Assertions.assertEquals("Test Email", dlqEvent.getContextData().get("userEmail"));
-            Assertions.assertEquals("Test User", dlqEvent.getContextData().get("userName"));
-        });
+    rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE, routingKey, event);
 
-    }
-    @Test
-    public void whenAdIsCreated_butEventIsUnknown_neverSendsEmail() {
-        var adId = UUID.randomUUID().toString();
-        Map<String, String> contextData = Map.of(
-                "userEmail", "test@example.com",
-                "userName", "Jan Testowy",
-                "adId", adId,
-                "adTitle", "Test Advert"
-        );
-        NotificationEvent event = new NotificationEvent(
-                "UNKNOWN_EVENT", UUID.randomUUID(), contextData
-        );
-        String routingKey = "notification.event.ad_created";
+    await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+      verify(emailService, never()).sendWelcomeEmail("Test Email", "Test User");
+    });
+  }
 
-        rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE, routingKey, event);
+  @Test
+  public void whenUserIsCreated_thenEmailServiceIsCalledAndSendsEmail_throwsException() {
+    NotificationEvent event = new NotificationEvent("USER_REGISTERED", UUID.randomUUID(), context);
+    String routingKey = "notification.event.user_registered";
+    doThrow(new EmailNotSendException("Test Email", null)).when(emailService)
+        .sendWelcomeEmail("Test Email", "Test User");
+    rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE, routingKey, event);
+    await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+      verify(emailService, times(1)).sendWelcomeEmail("Test Email", "Test User");
+      Object dlqMsg = rabbitTemplate.receiveAndConvert(RabbitMQConfig.DLQ_QUEUE, 1000);
+      Assertions.assertNotNull(dlqMsg);
+      Assertions.assertEquals(NotificationEvent.class, dlqMsg.getClass());
+      NotificationEvent dlqEvent = (NotificationEvent) dlqMsg;
+      Assertions.assertEquals("Test Email", dlqEvent.getContextData().get("userEmail"));
+      Assertions.assertEquals("Test User", dlqEvent.getContextData().get("userName"));
+    });
 
-        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
-            verify(emailService,never())
-                    .sendAdvertIsAddedEmail("test@example.com", "Jan Testowy", adId, "Test Advert");
-        });
-    }
+  }
+
+  @Test
+  public void whenAdIsCreated_butEventIsUnknown_neverSendsEmail() {
+    var adId = UUID.randomUUID().toString();
+    Map<String, String> contextData = Map.of("userEmail", "test@example.com", "userName",
+        "Jan Testowy", "adId", adId, "adTitle", "Test Advert");
+    NotificationEvent event =
+        new NotificationEvent("UNKNOWN_EVENT", UUID.randomUUID(), contextData);
+    String routingKey = "notification.event.ad_created";
+
+    rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE, routingKey, event);
+
+    await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+      verify(emailService, never()).sendAdvertIsAddedEmail("test@example.com", "Jan Testowy", adId,
+          "Test Advert");
+    });
+  }
 
 }

@@ -19,67 +19,67 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
-    private final JavaMailSender mailSender;
-    private final TemplateEngine templateEngine;
+  private final JavaMailSender mailSender;
+  private final TemplateEngine templateEngine;
 
-    @Value("${user.profile.link: placeholder}")
-    private String userProfileLink;
-    @Value("${spring.mail.username: placeholder}")
-    private String fromEmail;
-    @Value("${advertisement.link: placeholder}")
-    private String advertisementUrl;
+  @Value("${user.profile.link: placeholder}")
+  private String userProfileLink;
+  @Value("${spring.mail.username: placeholder}")
+  private String fromEmail;
+  @Value("${advertisement.link: placeholder}")
+  private String advertisementUrl;
 
+  @Override
+  public void sendAdvertIsAddedEmail(String toEmail, String userName, String adId, String adTitle) {
 
-    @Override
-    public void sendAdvertIsAddedEmail(String toEmail, String userName, String adId, String adTitle) {
+    Context context = new Context();
+    context.setVariable("userName", userName);
+    context.setVariable("advertisementUrl", advertisementUrl);
+    context.setVariable("adId", adId);
+    context.setVariable("adTitle", adTitle);
 
-        Context context = new Context();
-        context.setVariable("userName", userName);
-        context.setVariable("advertisementUrl", advertisementUrl);
-        context.setVariable("adId",adId);
-        context.setVariable("adTitle", adTitle);
+    String htmlBody = templateEngine.process("advert-created-email", context);
 
-        String htmlBody = templateEngine.process("advert-created-email", context);
+    try {
+      MimeMessage mimeMessage = mailSender.createMimeMessage();
+      MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
 
-        try {
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
+      helper.setFrom(fromEmail);
+      helper.setTo(toEmail);
+      helper.setSubject("Your advertisement is ready and up " + userName + "!");
 
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("Your advertisement is ready and up " + userName + "!");
+      helper.setText(htmlBody, true);
 
-            helper.setText(htmlBody, true);
+      mailSender.send(mimeMessage);
 
-            mailSender.send(mimeMessage);
+      log.info("Successfully sent email with added advert {}", toEmail);
 
-            log.info("Successfully sent email with added advert {}", toEmail);
-
-        } catch (MessagingException | MailException e) {
-            log.error("Error when sending email to: with error: {}: {}", toEmail, e.getMessage());
-            throw new EmailNotSendException("Error when sending email" + toEmail, e);
-        }
+    } catch (MessagingException | MailException e) {
+      log.error("Error when sending email to: with error: {}: {}", toEmail, e.getMessage());
+      throw new EmailNotSendException("Error when sending email" + toEmail, e);
     }
+  }
 
-    @Override
-    public void sendWelcomeEmail(String toEmail, String userName) {
-        Context context = new Context();
-        context.setVariable("userName", userName);
-        context.setVariable("userProfileLink", userProfileLink);
-        String htmlBody = templateEngine.process("user-registered", context);
+  @Override
+  public void sendWelcomeEmail(String toEmail, String userName) {
+    Context context = new Context();
+    context.setVariable("userName", userName);
+    context.setVariable("userProfileLink", userProfileLink);
+    String htmlBody = templateEngine.process("user-registered", context);
 
-        try {
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("Welcome to Local Trade"+userName +"!");
-            helper.setText(htmlBody,true);
-            mailSender.send(mimeMessage);
-            log.info("Successfully sent welcome email to: {}", toEmail);
-        }catch (MessagingException | MailException e) {
-            log.error("Error when sending welcoming email to: with error: {}: {}", toEmail, e.getMessage());
-            throw new EmailNotSendException("Error when sending email" + toEmail, e);
-        }
+    try {
+      MimeMessage mimeMessage = mailSender.createMimeMessage();
+      MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
+      helper.setFrom(fromEmail);
+      helper.setTo(toEmail);
+      helper.setSubject("Welcome to Local Trade" + userName + "!");
+      helper.setText(htmlBody, true);
+      mailSender.send(mimeMessage);
+      log.info("Successfully sent welcome email to: {}", toEmail);
+    } catch (MessagingException | MailException e) {
+      log.error("Error when sending welcoming email to: with error: {}: {}", toEmail,
+          e.getMessage());
+      throw new EmailNotSendException("Error when sending email" + toEmail, e);
     }
+  }
 }

@@ -35,79 +35,83 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class AdvertisementFilterUnitTests {
-    @Mock
-    private AdvertisementRepository advertisementRepository;
-    @InjectMocks
-    private AdvertisementFilterServiceImpl advertisementFilterService;
-    @Mock
-    private AdvertisementDtoMapper advertisementDtoMapper;
+  @Mock
+  private AdvertisementRepository advertisementRepository;
+  @InjectMocks
+  private AdvertisementFilterServiceImpl advertisementFilterService;
+  @Mock
+  private AdvertisementDtoMapper advertisementDtoMapper;
 
-    @Test
-    public void filterAndPageAdvertisements_thenReturnPageOfAdvertisements() {
-        AdvertisementFilterDto advertisementFilterDto = AdFiltersUtils.getAdvertisementFilterDto();
-        AdvertisementEntity ad1 = AdUtils.createAdvertisement();
-        AdvertisementEntity ad2 = AdUtils.createAdvertisement();
-        AdvertisementEntity ad3 = AdUtils.createAdvertisement();
-        List<AdvertisementEntity> advertisementEntities = List.of(ad1, ad2, ad3);
-        Pageable pageable = PageRequest.of(0, 10);
-        when(advertisementRepository.findAll(
-                ArgumentMatchers.<Specification<AdvertisementEntity>>any(),
-                any(Pageable.class)
-        )).thenReturn(new PageImpl<>(advertisementEntities));
-        ResponseAdvertisementDto mockResponseDto = new ResponseAdvertisementDto(LocalDateTime.now(),
-                UUID.randomUUID(),UUID.randomUUID(),"testemail@email.pl", 1, BigDecimal.TEN, "Test Title", "img.jpg",
-                "Desc", true, "Location", List.of("url"), List.of("thumb"));
+  @Test
+  public void filterAndPageAdvertisements_thenReturnPageOfAdvertisements() {
+    AdvertisementFilterDto advertisementFilterDto = AdFiltersUtils.getAdvertisementFilterDto();
+    AdvertisementEntity ad1 = AdUtils.createAdvertisement();
+    AdvertisementEntity ad2 = AdUtils.createAdvertisement();
+    AdvertisementEntity ad3 = AdUtils.createAdvertisement();
+    List<AdvertisementEntity> advertisementEntities = List.of(ad1, ad2, ad3);
+    Pageable pageable = PageRequest.of(0, 10);
+    when(advertisementRepository.findAll(ArgumentMatchers.<Specification<AdvertisementEntity>>any(),
+        any(Pageable.class))).thenReturn(new PageImpl<>(advertisementEntities));
+    ResponseAdvertisementDto mockResponseDto = new ResponseAdvertisementDto(LocalDateTime.now(),
+        UUID.randomUUID(), UUID.randomUUID(), "testemail@email.pl", 1, BigDecimal.TEN, "Test Title",
+        "img.jpg", "Desc", true, "Location", List.of("url"), List.of("thumb"));
 
-        when(advertisementDtoMapper.toResponseAdvertisementDto(any(AdvertisementEntity.class)))
-                .thenReturn(mockResponseDto);
+    when(advertisementDtoMapper.toResponseAdvertisementDto(any(AdvertisementEntity.class)))
+        .thenReturn(mockResponseDto);
 
-        Page<ResponseAdvertisementDto> result = advertisementFilterService
-                .filterAndPageAdvertisements(advertisementFilterDto, pageable);
+    Page<ResponseAdvertisementDto> result =
+        advertisementFilterService.filterAndPageAdvertisements(advertisementFilterDto, pageable);
 
-        assertEquals(3, result.getNumberOfElements());
-        assertEquals(1, result.getTotalPages());
-        // Sprawdzamy, że wszystkie DTO mają aktywność zgodną z filtrem
-        assertTrue(result.getContent().stream().allMatch(ResponseAdvertisementDto::active));
-    }
-    @Test
-    public void filterByCategoryIdAndPageAdvertisements_thenReturnPageOfAdvertisements() {
-        CategoryEntity categoryEntity = CategoryUtils.createCategory();
-        AdvertisementFilterDto advertisementFilterDto = AdFiltersUtils.filterByCategory(categoryEntity.getId());
-        List<AdvertisementEntity> advertisementEntities = IntStream.range(0, 10)
-                .mapToObj(i->AdUtils.createAdvertisement())
-                .toList();
-        Pageable pageable = PageRequest.of(0, 10);
+    assertEquals(3, result.getNumberOfElements());
+    assertEquals(1, result.getTotalPages());
+    // Sprawdzamy, że wszystkie DTO mają aktywność zgodną z filtrem
+    assertTrue(result.getContent().stream().allMatch(ResponseAdvertisementDto::active));
+  }
 
-        when(advertisementRepository.findAll(ArgumentMatchers.any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(advertisementEntities));
+  @Test
+  public void filterByCategoryIdAndPageAdvertisements_thenReturnPageOfAdvertisements() {
+    CategoryEntity categoryEntity = CategoryUtils.createCategory();
+    AdvertisementFilterDto advertisementFilterDto =
+        AdFiltersUtils.filterByCategory(categoryEntity.getId());
+    List<AdvertisementEntity> advertisementEntities =
+        IntStream.range(0, 10).mapToObj(i -> AdUtils.createAdvertisement()).toList();
+    Pageable pageable = PageRequest.of(0, 10);
 
-        ResponseAdvertisementDto mockResponseDto = new ResponseAdvertisementDto(LocalDateTime.now(),
-                UUID.randomUUID(),UUID.randomUUID(),"testemail@email.pl", categoryEntity.getId(), BigDecimal.TEN, "Test Title", "img.jpg",
-                "Desc", true, "Location", List.of("url"), List.of("thumb"));
+    when(advertisementRepository.findAll(ArgumentMatchers.any(Specification.class),
+        any(Pageable.class))).thenReturn(new PageImpl<>(advertisementEntities));
 
-        when(advertisementDtoMapper.toResponseAdvertisementDto(any(AdvertisementEntity.class)))
-                .thenReturn(mockResponseDto);
+    ResponseAdvertisementDto mockResponseDto =
+        new ResponseAdvertisementDto(LocalDateTime.now(), UUID.randomUUID(), UUID.randomUUID(),
+            "testemail@email.pl", categoryEntity.getId(), BigDecimal.TEN, "Test Title", "img.jpg",
+            "Desc", true, "Location", List.of("url"), List.of("thumb"));
 
-        Page<ResponseAdvertisementDto> result = advertisementFilterService.filterAndPageAdvertisements(advertisementFilterDto, pageable);
+    when(advertisementDtoMapper.toResponseAdvertisementDto(any(AdvertisementEntity.class)))
+        .thenReturn(mockResponseDto);
 
-        assertEquals(10, result.getNumberOfElements());
-        assertEquals(1, result.getTotalPages());
-        assertTrue(result.getContent().stream().allMatch(ResponseAdvertisementDto::active));
+    Page<ResponseAdvertisementDto> result =
+        advertisementFilterService.filterAndPageAdvertisements(advertisementFilterDto, pageable);
 
-    }
-   @Test
-   public void filterByCategoryAndPageWithWrongDataAdvertisements_thenReturnNoAdvertisements() {
-        int categoryId = 999;
-        AdvertisementFilterDto advertisementFilterDto = AdFiltersUtils.filterByCategory(categoryId);
-        List<AdvertisementEntity> ad = IntStream.range(0,10)
-                .mapToObj(i->AdUtils.createAdvertisement())
-                .toList();
-        Pageable pageable = PageRequest.of(0, 10);
-        when(advertisementRepository.findAll(ArgumentMatchers.any(Specification.class), any(Pageable.class))).thenReturn(Page.empty());
+    assertEquals(10, result.getNumberOfElements());
+    assertEquals(1, result.getTotalPages());
+    assertTrue(result.getContent().stream().allMatch(ResponseAdvertisementDto::active));
 
-        Page<ResponseAdvertisementDto> result = advertisementFilterService.filterAndPageAdvertisements(advertisementFilterDto, pageable);
+  }
 
-        assertEquals(0, result.getNumberOfElements());
-        assertEquals(1, result.getTotalPages());
-        assertTrue(result.getContent().stream().allMatch(ResponseAdvertisementDto::active));
-    }
+  @Test
+  public void filterByCategoryAndPageWithWrongDataAdvertisements_thenReturnNoAdvertisements() {
+    int categoryId = 999;
+    AdvertisementFilterDto advertisementFilterDto = AdFiltersUtils.filterByCategory(categoryId);
+    List<AdvertisementEntity> ad =
+        IntStream.range(0, 10).mapToObj(i -> AdUtils.createAdvertisement()).toList();
+    Pageable pageable = PageRequest.of(0, 10);
+    when(advertisementRepository.findAll(ArgumentMatchers.any(Specification.class),
+        any(Pageable.class))).thenReturn(Page.empty());
+
+    Page<ResponseAdvertisementDto> result =
+        advertisementFilterService.filterAndPageAdvertisements(advertisementFilterDto, pageable);
+
+    assertEquals(0, result.getNumberOfElements());
+    assertEquals(1, result.getTotalPages());
+    assertTrue(result.getContent().stream().allMatch(ResponseAdvertisementDto::active));
+  }
 }

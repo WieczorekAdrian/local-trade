@@ -10,14 +10,10 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class RabbitNotificationEventPublisher implements NotificationEventPublisher {
 
-    private final RabbitTemplate rabbitTemplate;
+  private final RabbitTemplate rabbitTemplate;
 
-    @Override
-    public void publishEvent(NotificationEvent event, String routingKey) {
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.NOTIFICATION_EXCHANGE,
-                routingKey,
-                event
-        );
-    }
+  @Override
+  public void publishEvent(NotificationEvent event, String routingKey) {
+    rabbitTemplate.convertAndSend(RabbitMQConfig.NOTIFICATION_EXCHANGE, routingKey, event);
+  }
 }

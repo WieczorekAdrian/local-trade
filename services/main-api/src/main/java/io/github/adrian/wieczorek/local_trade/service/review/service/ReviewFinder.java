@@ -1,6 +1,5 @@
 package io.github.adrian.wieczorek.local_trade.service.review.service;
 
-import io.github.adrian.wieczorek.local_trade.exceptions.UserNotFoundException;
 import io.github.adrian.wieczorek.local_trade.service.review.ReviewEntity;
 import io.github.adrian.wieczorek.local_trade.service.review.ReviewRepository;
 import io.github.adrian.wieczorek.local_trade.service.review.dto.ReviewResponseDto;
@@ -22,24 +21,25 @@ import java.util.List;
 @Slf4j
 public class ReviewFinder {
 
-    private final ReviewRepository reviewRepository;
-    private final UsersService usersService;
-    private final ReviewResponseDtoMapper reviewResponseDtoMapper;
+  private final ReviewRepository reviewRepository;
+  private final UsersService usersService;
+  private final ReviewResponseDtoMapper reviewResponseDtoMapper;
 
-    @Transactional(readOnly = true)
-    public List<ReviewResponseDto> getAllMyReviews(UserDetails userDetails) {
-        log.info("Getting all reviews for user {}", userDetails.getUsername());
-        UsersEntity user = usersService.getCurrentUser(userDetails.getUsername());
+  @Transactional(readOnly = true)
+  public List<ReviewResponseDto> getAllMyReviews(UserDetails userDetails) {
+    log.info("Getting all reviews for user {}", userDetails.getUsername());
+    UsersEntity user = usersService.getCurrentUser(userDetails.getUsername());
 
-        List<ReviewEntity> reviewEntities = reviewRepository.findAllByReviewedUserOrReviewer(user, user);
+    List<ReviewEntity> reviewEntities =
+        reviewRepository.findAllByReviewedUserOrReviewer(user, user);
 
-        if(reviewEntities.isEmpty()) {
-            log.info("No reviews found for user with email {}", userDetails.getUsername());
-            return Collections.emptyList();
-        }
-
-        log.info("Found {} reviews for user {}", reviewEntities.size(), userDetails.getUsername());
-        return reviewEntities.stream().map(reviewResponseDtoMapper::toDto).toList();
-
+    if (reviewEntities.isEmpty()) {
+      log.info("No reviews found for user with email {}", userDetails.getUsername());
+      return Collections.emptyList();
     }
+
+    log.info("Found {} reviews for user {}", reviewEntities.size(), userDetails.getUsername());
+    return reviewEntities.stream().map(reviewResponseDtoMapper::toDto).toList();
+
+  }
 }

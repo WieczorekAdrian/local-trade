@@ -18,43 +18,39 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class UserRegisteredHandlerTests {
-    @Mock
-    private EmailService emailService;
-    @InjectMocks
-    private UserRegisteredHandler userRegisteredHandler;
+  @Mock
+  private EmailService emailService;
+  @InjectMocks
+  private UserRegisteredHandler userRegisteredHandler;
 
+  @Test
+  public void whenGettingUserRegisteredHandler_shouldReturnEmailSent() {
+    var context = Map.of("userName", "Test User", "userEmail", "Test Email");
 
+    NotificationEvent notificationEvent =
+        new NotificationEvent("USER_REGISTERED", UUID.randomUUID(), context);
 
-    @Test
-    public void whenGettingUserRegisteredHandler_shouldReturnEmailSent() {
-        var context = Map.of(
-                "userName","Test User",
-                "userEmail","Test Email"
-        );
+    userRegisteredHandler.handle(notificationEvent);
 
-        NotificationEvent notificationEvent = new NotificationEvent("USER_REGISTERED", UUID.randomUUID(),context);
+    verify(emailService, times(1)).sendWelcomeEmail("Test Email", "Test User");
 
-        userRegisteredHandler.handle(notificationEvent);
+  }
 
-        verify(emailService,times(1)).sendWelcomeEmail("Test Email","Test User");
+  @Test
+  public void whenGettingUserRegisteredHandlerAndThereIsSmtpError_shouldThrowEmailNotSendException() {
+    var context = Map.of("userName", "Test User", "userEmail", "Test Email");
 
-    }
+    NotificationEvent notificationEvent =
+        new NotificationEvent("USER_REGISTERED", UUID.randomUUID(), context);
 
-    @Test
-    public void whenGettingUserRegisteredHandlerAndThereIsSmtpError_shouldThrowEmailNotSendException() {
-        var context = Map.of(
-                "userName","Test User",
-                "userEmail","Test Email"
-        );
+    doThrow(new EmailNotSendException("SMTP Error", null)).when(emailService)
+        .sendWelcomeEmail("Test Email", "Test User");
 
-        NotificationEvent notificationEvent = new NotificationEvent("USER_REGISTERED", UUID.randomUUID(),context);
+    Assertions.assertThrows(EmailNotSendException.class,
+        () -> userRegisteredHandler.handle(notificationEvent));
 
-        doThrow(new EmailNotSendException("SMTP Error",null)).when(emailService).sendWelcomeEmail("Test Email","Test User");
+    verify(emailService, times(1)).sendWelcomeEmail("Test Email", "Test User");
 
-        Assertions.assertThrows(EmailNotSendException.class, () -> userRegisteredHandler.handle(notificationEvent));
-
-        verify(emailService,times(1)).sendWelcomeEmail("Test Email","Test User");
-
-    }
+  }
 
 }

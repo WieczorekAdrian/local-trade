@@ -8,10 +8,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface ReviewRepository  extends JpaRepository<ReviewEntity, Long> {
-    Optional<ReviewEntity> findByReviewedUserOrReviewer(UsersEntity user, UsersEntity user1);
-    List<ReviewEntity> findAllByReviewedUserOrReviewer(UsersEntity user, UsersEntity user1);
-    boolean existsByTradeEntityAndReviewer(TradeEntity tradeEntity, UsersEntity reviewer);
-    Optional<ReviewEntity> findByReviewId(UUID reviewId);
-    List<ReviewEntity> findAllByReviewedUser(UsersEntity user);
+public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
+  Optional<ReviewEntity> findByReviewedUserOrReviewer(UsersEntity user, UsersEntity user1);
+
+  List<ReviewEntity> findAllByReviewedUserOrReviewer(UsersEntity user, UsersEntity user1);
+
+  boolean existsByTradeEntityAndReviewer(TradeEntity tradeEntity, UsersEntity reviewer);
+
+  Optional<ReviewEntity> findByReviewId(UUID reviewId);
+
+  List<ReviewEntity> findAllByReviewedUser(UsersEntity user);
 }

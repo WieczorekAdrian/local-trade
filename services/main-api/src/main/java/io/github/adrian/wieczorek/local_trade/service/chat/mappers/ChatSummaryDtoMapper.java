@@ -10,14 +10,14 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ChatSummaryDtoMapper {
 
-    @Mapping(target = "lastMessage", source = "entity.content")
-    @Mapping(target = "lastMessageTimestamp", source = "entity.timestamp")
-    @Mapping(target = "partnerName", source = "partner.name")
-    @Mapping(target = "partnerEmail", source = "partner.email")
-    @Mapping(target = "unreadCount", source = "unreadCount")
-    ChatSummaryDto toChatSummaryDto(ChatMessageEntity entity, UsersEntity partner, long unreadCount);
+  @Mapping(target = "lastMessage", source = "entity.content")
+  @Mapping(target = "lastMessageTimestamp", source = "entity.timestamp")
+  @Mapping(target = "partnerName", source = "partner.name")
+  @Mapping(target = "partnerEmail", source = "partner.email")
+  @Mapping(target = "unreadCount", source = "unreadCount")
+  ChatSummaryDto toChatSummaryDto(ChatMessageEntity entity, UsersEntity partner, long unreadCount);
 
-    default UnreadCountDto toUnreadCountDto(long totalUnread) {
-        return new UnreadCountDto(totalUnread);
-    }
+  default UnreadCountDto toUnreadCountDto(long totalUnread) {
+    return new UnreadCountDto(totalUnread);
+  }
 }

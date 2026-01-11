@@ -18,21 +18,20 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class AdvertisementFinder {
 
-    private final AdvertisementRepository advertisementRepository;
-    private final AdvertisementDtoMapper advertisementDtoMapper;
-    private final SimpleAdvertisementDtoMapper simpleAdvertisementDtoMapper;
+  private final AdvertisementRepository advertisementRepository;
+  private final AdvertisementDtoMapper advertisementDtoMapper;
+  private final SimpleAdvertisementDtoMapper simpleAdvertisementDtoMapper;
 
-    public ResponseAdvertisementDto getAdvertisementById(UUID advertisementId) {
-        var advertisement  = advertisementRepository.findByAdvertisementId(advertisementId)
-                .orElseThrow(() -> new EntityNotFoundException("Advertisement not found with id: " + advertisementId));
-        return advertisementDtoMapper.toResponseAdvertisementDto(advertisement);
-    }
+  public ResponseAdvertisementDto getAdvertisementById(UUID advertisementId) {
+    var advertisement = advertisementRepository.findByAdvertisementId(advertisementId).orElseThrow(
+        () -> new EntityNotFoundException("Advertisement not found with id: " + advertisementId));
+    return advertisementDtoMapper.toResponseAdvertisementDto(advertisement);
+  }
 
-    @Transactional(readOnly = true)
-    public List<SimpleAdvertisementResponseDto> findAllAdvertisementsByCategoryId(Integer categoryId) {
-            return advertisementRepository.findByCategoryEntityId(categoryId)
-                    .stream()
-                    .map(simpleAdvertisementDtoMapper::advertisementToSimpleDto)
-                    .toList();
-    }
+  @Transactional(readOnly = true)
+  public List<SimpleAdvertisementResponseDto> findAllAdvertisementsByCategoryId(
+      Integer categoryId) {
+    return advertisementRepository.findByCategoryEntityId(categoryId).stream()
+        .map(simpleAdvertisementDtoMapper::advertisementToSimpleDto).toList();
+  }
 }

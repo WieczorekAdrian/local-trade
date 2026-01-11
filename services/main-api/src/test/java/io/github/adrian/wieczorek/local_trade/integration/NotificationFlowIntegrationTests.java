@@ -24,57 +24,57 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
-
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestPropertySource(properties = "security.jwt.secret-key=41c6701ad7f5abf1db2b053a2f1a39ad41189e00462ec987622b5409dbc0006d")
+@TestPropertySource(
+    properties = "security.jwt.secret-key=41c6701ad7f5abf1db2b053a2f1a39ad41189e00462ec987622b5409dbc0006d")
 @Testcontainers
 @AutoConfigureMockMvc
 public class NotificationFlowIntegrationTests extends AbstractIntegrationTest {
 
-    @Autowired
-    private CategoryRepository categoryRepository;
-    @Autowired
-    private AdvertisementRepository advertisementRepository;
+  @Autowired
+  private CategoryRepository categoryRepository;
+  @Autowired
+  private AdvertisementRepository advertisementRepository;
 
+  private UsersEntity randomUser;
+  private AdvertisementEntity randomAdvertisementEntity;
 
-    private UsersEntity randomUser;
-    private AdvertisementEntity randomAdvertisementEntity;
+  @Autowired
+  private AdvertisementEventFacade advertisementEventFacade;
+  @Autowired
+  private UsersRepository usersRepository;
+  @MockitoBean
+  private NotificationEventPublisher notificationEventPublisher;
 
-    @Autowired
-    private AdvertisementEventFacade advertisementEventFacade;
-    @Autowired
-    private UsersRepository usersRepository;
-    @MockitoBean
-    private NotificationEventPublisher notificationEventPublisher;
+  @BeforeEach
+  public void setup() {
+    randomUser = UserUtils.createUserRoleUserUnitTestWithUUID();
+    usersRepository.save(randomUser);
+    CategoryEntity categoryEntity = CategoryUtils.createCategoryForIntegrationTests();
+    categoryRepository.save(categoryEntity);
+    randomAdvertisementEntity =
+        AdUtils.createAdvertisementRoleUserForIntegrationTests(categoryEntity, randomUser);
+    advertisementRepository.save(randomAdvertisementEntity);
+  }
 
-    @BeforeEach
-    public void setup() {
-        randomUser = UserUtils.createUserRoleUserUnitTestWithUUID();
-        usersRepository.save(randomUser);
-        CategoryEntity categoryEntity = CategoryUtils.createCategoryForIntegrationTests();
-        categoryRepository.save(categoryEntity);
-        randomAdvertisementEntity = AdUtils.createAdvertisementRoleUserForIntegrationTests(categoryEntity, randomUser);
-        advertisementRepository.save(randomAdvertisementEntity);
-    }
+  @Test
+  @Transactional
+  public void happyPath_whenSendingEventToRightHandler_thenReturnOk() {
+    ArgumentCaptor<NotificationEvent> eventCaptor =
+        ArgumentCaptor.forClass(NotificationEvent.class);
+    ArgumentCaptor<String> routingKeyCaptor = ArgumentCaptor.forClass(String.class);
 
-    @Test
-    @Transactional
-    public void happyPath_whenSendingEventToRightHandler_thenReturnOk() {
-        ArgumentCaptor<NotificationEvent> eventCaptor = ArgumentCaptor.forClass(NotificationEvent.class);
-        ArgumentCaptor<String> routingKeyCaptor = ArgumentCaptor.forClass(String.class);
+    advertisementEventFacade.publishAdCreated(randomUser, randomAdvertisementEntity);
 
-        advertisementEventFacade.publishAdCreated(randomUser, randomAdvertisementEntity);
+    verify(notificationEventPublisher, times(1)).publishEvent(eventCaptor.capture(),
+        routingKeyCaptor.capture());
 
-        verify(notificationEventPublisher, times(1))
-                .publishEvent(eventCaptor.capture(), routingKeyCaptor.capture());
-
-        NotificationEvent capturedEvent = eventCaptor.getValue();
-        assertEquals("AD_CREATED", capturedEvent.getEventType());
-        assertEquals(randomUser.getUserId(), capturedEvent.getRecipientUserId());
-        assertEquals("notification.event.ad_created", routingKeyCaptor.getValue());
-    }
+    NotificationEvent capturedEvent = eventCaptor.getValue();
+    assertEquals("AD_CREATED", capturedEvent.getEventType());
+    assertEquals(randomUser.getUserId(), capturedEvent.getRecipientUserId());
+    assertEquals("notification.event.ad_created", routingKeyCaptor.getValue());
+  }
 }

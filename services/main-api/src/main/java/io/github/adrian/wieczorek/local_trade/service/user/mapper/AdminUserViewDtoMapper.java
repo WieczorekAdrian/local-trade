@@ -6,5 +6,5 @@ import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
 public interface AdminUserViewDtoMapper {
-    AdminUserViewDto toAdminUserViewDto(UsersEntity usersEntity);
+  AdminUserViewDto toAdminUserViewDto(UsersEntity usersEntity);
 }

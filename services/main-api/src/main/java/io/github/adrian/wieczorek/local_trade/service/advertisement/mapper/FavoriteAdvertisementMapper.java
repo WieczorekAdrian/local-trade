@@ -8,6 +8,6 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface FavoriteAdvertisementMapper {
 
-    @Mapping(source = "advertisementId", target = "advertisementId")
-    FavoriteAdvertisementDto toDto(AdvertisementEntity advertisementEntity);
+  @Mapping(source = "advertisementId", target = "advertisementId")
+  FavoriteAdvertisementDto toDto(AdvertisementEntity advertisementEntity);
 }

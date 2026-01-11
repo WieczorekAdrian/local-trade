@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.UUID;
 
 public interface AdvertisementSecurityService {
-    boolean isOwner(Authentication authentication, Integer advertisement);
-    boolean isOwner(UserDetails userDetails, UUID advertisementId);
+  boolean isOwner(Authentication authentication, Integer advertisement);
+
+  boolean isOwner(UserDetails userDetails, UUID advertisementId);
 }

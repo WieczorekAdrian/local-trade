@@ -12,22 +12,19 @@ import java.time.Duration;
 @Slf4j
 public class JwtBlacklistService {
 
-    private final StringRedisTemplate redisTemplate;
+  private final StringRedisTemplate redisTemplate;
 
-    private static final String BLACKLIST_VALUE = "blacklisted";
+  private static final String BLACKLIST_VALUE = "blacklisted";
 
-    public void blacklistToken(String token, long timeToLiveInSeconds){
-        if (timeToLiveInSeconds > 0) {
-            redisTemplate.opsForValue().set(
-                    token,
-                    BLACKLIST_VALUE,
-                    Duration.ofSeconds(timeToLiveInSeconds)
-            );
-        }
+  public void blacklistToken(String token, long timeToLiveInSeconds) {
+    if (timeToLiveInSeconds > 0) {
+      redisTemplate.opsForValue().set(token, BLACKLIST_VALUE,
+          Duration.ofSeconds(timeToLiveInSeconds));
     }
+  }
 
-    public boolean isTokenBlacklisted(String token){
-        return redisTemplate.hasKey(token);
-    }
+  public boolean isTokenBlacklisted(String token) {
+    return redisTemplate.hasKey(token);
+  }
 
 }

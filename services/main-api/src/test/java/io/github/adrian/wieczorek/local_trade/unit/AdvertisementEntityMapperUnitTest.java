@@ -12,23 +12,21 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
 @ExtendWith(MockitoExtension.class)
 public class AdvertisementEntityMapperUnitTest {
-    @Test
-    public void updateAdvertisementFromDtoSkipNull_thenReturnUpdatedAdvertisement() {
-        AdvertisementUpdateDto dto = new AdvertisementUpdateDto(null, "test123", "test123", "test123", "test123");
-        AdvertisementEntity advertisementEntity = AdUtils.createAdvertisement();
-        BigDecimal price = new BigDecimal("149.99");
-        AdvertisementMapper mapper = Mappers.getMapper(AdvertisementMapper.class);
-        mapper.updateAdvertisementFromDtoSkipNull(dto, advertisementEntity);
+  @Test
+  public void updateAdvertisementFromDtoSkipNull_thenReturnUpdatedAdvertisement() {
+    AdvertisementUpdateDto dto =
+        new AdvertisementUpdateDto(null, "test123", "test123", "test123", "test123");
+    AdvertisementEntity advertisementEntity = AdUtils.createAdvertisement();
+    BigDecimal price = new BigDecimal("149.99");
+    AdvertisementMapper mapper = Mappers.getMapper(AdvertisementMapper.class);
+    mapper.updateAdvertisementFromDtoSkipNull(dto, advertisementEntity);
 
-        Assertions.assertEquals("test123", advertisementEntity.getTitle());
-        Assertions.assertEquals("test123", advertisementEntity.getDescription());
-        Assertions.assertEquals("test123", advertisementEntity.getLocation());
-        Assertions.assertEquals("test123", advertisementEntity.getImage());
-        Assertions.assertEquals(advertisementEntity.getPrice(), price);
-    }
+    Assertions.assertEquals("test123", advertisementEntity.getTitle());
+    Assertions.assertEquals("test123", advertisementEntity.getDescription());
+    Assertions.assertEquals("test123", advertisementEntity.getLocation());
+    Assertions.assertEquals("test123", advertisementEntity.getImage());
+    Assertions.assertEquals(advertisementEntity.getPrice(), price);
+  }
 }

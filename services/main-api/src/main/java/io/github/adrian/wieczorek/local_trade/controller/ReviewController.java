@@ -21,25 +21,30 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ReviewController {
 
-    private final ReviewService reviewService;
-    private final ReviewFinder reviewFinder;
+  private final ReviewService reviewService;
+  private final ReviewFinder reviewFinder;
 
-    @GetMapping
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<ReviewResponseDto>> getMyReviews(@AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(reviewFinder.getAllMyReviews(userDetails));
-    }
+  @GetMapping
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<List<ReviewResponseDto>> getMyReviews(
+      @AuthenticationPrincipal UserDetails userDetails) {
+    return ResponseEntity.ok(reviewFinder.getAllMyReviews(userDetails));
+  }
 
-    @PreAuthorize("isAuthenticated()")
-    @PostMapping("/{tradeId}")
-    public ResponseEntity<ReviewResponseDto> postReview(@AuthenticationPrincipal UserDetails userDetails, @PathVariable UUID tradeId,@RequestBody @Valid ReviewRequestDto reviewRequestDto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(reviewService.postReview(userDetails, tradeId, reviewRequestDto));
-    }
+  @PreAuthorize("isAuthenticated()")
+  @PostMapping("/{tradeId}")
+  public ResponseEntity<ReviewResponseDto> postReview(
+      @AuthenticationPrincipal UserDetails userDetails, @PathVariable UUID tradeId,
+      @RequestBody @Valid ReviewRequestDto reviewRequestDto) {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(reviewService.postReview(userDetails, tradeId, reviewRequestDto));
+  }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{reviewId}")
-    public ResponseEntity<Void> deleteReview(@AuthenticationPrincipal UserDetails userDetails, @PathVariable UUID reviewId) {
-        reviewService.deleteReviewByAdmin(userDetails,reviewId);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-    }
+  @PreAuthorize("hasRole('ADMIN')")
+  @DeleteMapping("/{reviewId}")
+  public ResponseEntity<Void> deleteReview(@AuthenticationPrincipal UserDetails userDetails,
+      @PathVariable UUID reviewId) {
+    reviewService.deleteReviewByAdmin(userDetails, reviewId);
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+  }
 }

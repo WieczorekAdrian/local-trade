@@ -20,20 +20,21 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class UsersFinder {
 
-    private final UsersRepository usersRepository;
-    private final AdminUserViewDtoMapper adminUserViewDtoMapper;
-    private final UserDashboardResponseMapper userDashboardResponseMapper;
+  private final UsersRepository usersRepository;
+  private final AdminUserViewDtoMapper adminUserViewDtoMapper;
+  private final UserDashboardResponseMapper userDashboardResponseMapper;
 
-    public List<AdminUserViewDto> allUsers() {
-        log.info("Finding all users");
-        return usersRepository.findAll().stream().map(adminUserViewDtoMapper::toAdminUserViewDto).toList();
-    }
+  public List<AdminUserViewDto> allUsers() {
+    log.info("Finding all users");
+    return usersRepository.findAll().stream().map(adminUserViewDtoMapper::toAdminUserViewDto)
+        .toList();
+  }
 
-    public UserDashboardResponseDto getLoggedInUser(String email) {
-        log.info("Finding user with email {}", email);
-        UsersEntity currentUser = usersRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User with email:" +  email +  "Not Found"));
-        log.debug("User with email {} found", email);
-        return userDashboardResponseMapper.toDto(currentUser);
-    }
+  public UserDashboardResponseDto getLoggedInUser(String email) {
+    log.info("Finding user with email {}", email);
+    UsersEntity currentUser = usersRepository.findByEmail(email)
+        .orElseThrow(() -> new UserNotFoundException("User with email:" + email + "Not Found"));
+    log.debug("User with email {} found", email);
+    return userDashboardResponseMapper.toDto(currentUser);
+  }
 }

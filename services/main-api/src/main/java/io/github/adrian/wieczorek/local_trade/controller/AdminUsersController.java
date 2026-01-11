@@ -1,6 +1,5 @@
 package io.github.adrian.wieczorek.local_trade.controller;
 
-import io.github.adrian.wieczorek.local_trade.service.user.UsersEntity;
 import io.github.adrian.wieczorek.local_trade.service.user.dto.AdminUserViewDto;
 import io.github.adrian.wieczorek.local_trade.service.user.service.UsersFinder;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +17,11 @@ import java.util.List;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminUsersController {
 
-    private final UsersFinder usersFinder;
+  private final UsersFinder usersFinder;
 
-    @GetMapping("/all")
-    public ResponseEntity<List<AdminUserViewDto>> allUsers() {
-        List<AdminUserViewDto> users = usersFinder.allUsers();
-        return ResponseEntity.ok(users);
-    }
+  @GetMapping("/all")
+  public ResponseEntity<List<AdminUserViewDto>> allUsers() {
+    List<AdminUserViewDto> users = usersFinder.allUsers();
+    return ResponseEntity.ok(users);
+  }
 }

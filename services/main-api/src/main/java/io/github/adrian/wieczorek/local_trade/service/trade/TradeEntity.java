@@ -16,6 +16,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+
 @Entity
 @Data
 @AllArgsConstructor
@@ -24,36 +25,36 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class TradeEntity {
 
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Id
-    private Long id;
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Id
+  private Long id;
 
-    UUID tradeId =  UUID.randomUUID();
+  UUID tradeId = UUID.randomUUID();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "advertisement_id")
-    private AdvertisementEntity advertisementEntity;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seller_id")
-    private UsersEntity seller;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "buyer_id")
-    private UsersEntity buyer;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "advertisement_id")
+  private AdvertisementEntity advertisementEntity;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "seller_id")
+  private UsersEntity seller;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "buyer_id")
+  private UsersEntity buyer;
 
-    @Enumerated(EnumType.STRING)
-    private TradeStatus status;
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-    @LastModifiedDate
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
+  @Enumerated(EnumType.STRING)
+  private TradeStatus status;
+  @CreatedDate
+  @Column(nullable = false, updatable = false)
+  private LocalDateTime createdAt;
+  @LastModifiedDate
+  @Column(nullable = false)
+  private LocalDateTime updatedAt;
 
-    @Digits(integer = 5, fraction = 2)
-    private BigDecimal proposedPrice;
+  @Digits(integer = 5, fraction = 2)
+  private BigDecimal proposedPrice;
 
-    private boolean sellerLeftReview;
-    private boolean buyerLeftReview;
-    private boolean buyerMarkedCompleted = false;
-    private boolean sellerMarkedCompleted = false;
+  private boolean sellerLeftReview;
+  private boolean buyerLeftReview;
+  private boolean buyerMarkedCompleted = false;
+  private boolean sellerMarkedCompleted = false;
 }

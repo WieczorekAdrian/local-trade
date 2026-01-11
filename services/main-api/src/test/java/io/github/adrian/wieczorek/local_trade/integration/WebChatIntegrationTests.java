@@ -6,7 +6,6 @@ import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatMessagePayloa
 import io.github.adrian.wieczorek.local_trade.service.user.UsersEntity;
 import io.github.adrian.wieczorek.local_trade.service.chat.ChatMessageRepository;
 import io.github.adrian.wieczorek.local_trade.service.user.UsersRepository;
-import io.github.adrian.wieczorek.local_trade.service.chat.service.ChatMessageService;
 import io.github.adrian.wieczorek.local_trade.security.JwtService;
 import io.github.adrian.wieczorek.local_trade.security.TestJwtUtils;
 import io.github.adrian.wieczorek.local_trade.testutils.UserUtils;
@@ -34,110 +33,109 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@TestPropertySource(properties = "security.jwt.secret-key=41c6701ad7f5abf1db2b053a2f1a39ad41189e00462ec987622b5409dbc0006d")
+@TestPropertySource(
+    properties = "security.jwt.secret-key=41c6701ad7f5abf1db2b053a2f1a39ad41189e00462ec987622b5409dbc0006d")
 @Testcontainers
 @AutoConfigureMockMvc
 public class WebChatIntegrationTests extends AbstractIntegrationTest {
 
-    @Autowired
-    JwtService jwtService;
-    @Autowired
-    UsersRepository usersRepository;
-    @Autowired
-    ChatMessageRepository chatMessageRepository;
+  @Autowired
+  JwtService jwtService;
+  @Autowired
+  UsersRepository usersRepository;
+  @Autowired
+  ChatMessageRepository chatMessageRepository;
 
-    @LocalServerPort
-    private int port;
+  @LocalServerPort
+  private int port;
 
-    private WebSocketStompClient stompClient;
-    private String url;
-    private String senderJwt;
-    @Autowired
-    private ObjectMapper objectMapper;
+  private WebSocketStompClient stompClient;
+  private String url;
+  private String senderJwt;
+  @Autowired
+  private ObjectMapper objectMapper;
 
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  @BeforeEach
+  public void setup() {
+    this.url = "ws://localhost:" + port + "/ws";
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    @BeforeEach
-    public void setup() {
-        this.url = "ws://localhost:" + port + "/ws";
+    this.stompClient = new WebSocketStompClient(new StandardWebSocketClient());
+    MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
+    converter.setObjectMapper(objectMapper);
+    this.stompClient.setMessageConverter(converter);
 
-        this.stompClient = new WebSocketStompClient(new StandardWebSocketClient());
-        MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
-        converter.setObjectMapper(objectMapper);
-        this.stompClient.setMessageConverter(converter);
+    UsersEntity sender = UserUtils.createUserRoleUser();
+    UsersEntity receiver = UserUtils.createUserRoleUser();
+    sender.setEmail("Tomek@wp.pl");
+    sender.setName("Tomek");
+    receiver.setName("Ania");
+    receiver.setEmail("Ania@wp.pl");
+    receiver.setUserId(UUID.randomUUID());
+    usersRepository.saveAndFlush(sender);
+    usersRepository.saveAndFlush(receiver);
 
-        UsersEntity sender = UserUtils.createUserRoleUser();
-        UsersEntity receiver = UserUtils.createUserRoleUser();
-        sender.setEmail("Tomek@wp.pl");
-        sender.setName("Tomek");
-        receiver.setName("Ania");
-        receiver.setEmail("Ania@wp.pl");
-        receiver.setUserId(UUID.randomUUID());
-        usersRepository.saveAndFlush(sender);
-        usersRepository.saveAndFlush(receiver);
+    this.senderJwt = TestJwtUtils.generateToken(jwtService, sender);
+  }
 
-        this.senderJwt = TestJwtUtils.generateToken(jwtService, sender);
+  @Test
+  public void sendChatMessage() throws Exception {
+    final BlockingQueue<Object> blockingQueue = new ArrayBlockingQueue<>(1);
+    ChatMessagePayload payload = new ChatMessagePayload("Hey how are you?");
+
+    WebSocketHttpHeaders handshakeHeaders = new WebSocketHttpHeaders();
+    handshakeHeaders.add("Cookie", "accessToken=" + senderJwt);
+
+    StompHeaders stompHeaders = new StompHeaders();
+
+    StompSessionHandlerAdapter sessionHandler = new StompSessionHandlerAdapter() {
+      @Override
+      public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
+        session.subscribe("/user/queue/messages", new StompFrameHandler() {
+          @Override
+          public Type getPayloadType(StompHeaders headers) {
+            return ChatMessageDto.class;
+          }
+
+          @Override
+          public void handleFrame(StompHeaders headers, Object payload) {
+            blockingQueue.offer(payload);
+          }
+        });
+        session.send("/app/chat.sendMessage.private/Ania@wp.pl", payload);
+      }
+
+      @Override
+      public void handleException(StompSession session, StompCommand command, StompHeaders headers,
+          byte[] payload, Throwable exception) {
+        exception.printStackTrace();
+        blockingQueue.offer(exception);
+      }
+
+      @Override
+      public void handleTransportError(StompSession session, Throwable exception) {
+        exception.printStackTrace();
+        blockingQueue.offer(exception);
+      }
+    };
+
+    CompletableFuture<StompSession> future =
+        stompClient.connectAsync(url, handshakeHeaders, stompHeaders, sessionHandler);
+
+    future.get(5, TimeUnit.SECONDS);
+
+    Object result = blockingQueue.poll(5, TimeUnit.SECONDS);
+
+    Assertions.assertNotNull(result, "Nie otrzymano odpowiedzi.");
+    if (result instanceof Throwable) {
+      Assertions.fail("Błąd STOMP: ", (Throwable) result);
     }
 
-    @Test
-    public void sendChatMessage() throws Exception {
-        final BlockingQueue<Object> blockingQueue = new ArrayBlockingQueue<>(1);
-        ChatMessagePayload payload = new ChatMessagePayload("Hey how are you?");
+    ChatMessageDto chatMessage = (ChatMessageDto) result;
+    Assertions.assertEquals("Hey how are you?", chatMessage.getContent());
+    Assertions.assertEquals("Tomek@wp.pl", chatMessage.getSender());
 
-        WebSocketHttpHeaders handshakeHeaders = new WebSocketHttpHeaders();
-        handshakeHeaders.add("Cookie", "accessToken=" + senderJwt);
-
-        StompHeaders stompHeaders = new StompHeaders();
-
-        StompSessionHandlerAdapter sessionHandler = new StompSessionHandlerAdapter() {
-            @Override
-            public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
-                session.subscribe("/user/queue/messages", new StompFrameHandler() {
-                    @Override
-                    public Type getPayloadType(StompHeaders headers) {
-                        return ChatMessageDto.class;
-                    }
-
-                    @Override
-                    public void handleFrame(StompHeaders headers, Object payload) {
-                        blockingQueue.offer(payload);
-                    }
-                });
-                session.send("/app/chat.sendMessage.private/Ania@wp.pl", payload);
-            }
-
-            @Override
-            public void handleException(StompSession session, StompCommand command, StompHeaders headers, byte[] payload, Throwable exception) {
-                exception.printStackTrace();
-                blockingQueue.offer(exception);
-            }
-
-            @Override
-            public void handleTransportError(StompSession session, Throwable exception) {
-                exception.printStackTrace();
-                blockingQueue.offer(exception);
-            }
-        };
-
-        CompletableFuture<StompSession> future = stompClient.connectAsync(
-                url, handshakeHeaders, stompHeaders, sessionHandler);
-
-        future.get(5, TimeUnit.SECONDS);
-
-        Object result = blockingQueue.poll(5, TimeUnit.SECONDS);
-
-        Assertions.assertNotNull(result, "Nie otrzymano odpowiedzi.");
-        if (result instanceof Throwable) {
-            Assertions.fail("Błąd STOMP: ", (Throwable) result);
-        }
-
-        ChatMessageDto chatMessage = (ChatMessageDto) result;
-        Assertions.assertEquals("Hey how are you?", chatMessage.getContent());
-        Assertions.assertEquals("Tomek@wp.pl", chatMessage.getSender());
-
-        chatMessageRepository.deleteAll();
-    }
+    chatMessageRepository.deleteAll();
+  }
 }
-
