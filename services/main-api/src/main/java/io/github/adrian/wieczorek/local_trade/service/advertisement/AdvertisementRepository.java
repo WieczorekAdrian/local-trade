@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public interface AdvertisementRepository extends JpaRepository<AdvertisementEntity, Integer> {
@@ -29,14 +30,14 @@ public interface AdvertisementRepository extends JpaRepository<AdvertisementEnti
 
   long countByCategoryEntityId(Integer categoryId);
 
-  AdvertisementEntity findByUser(UsersEntity user);
-
-  AdvertisementEntity findByTitle(String title);
-
   @Modifying(clearAutomatically = true)
   @Transactional
   @Query(
       value = "UPDATE advertisement_entity SET active = false WHERE active = true AND created_at < :cutoffDate",
       nativeQuery = true)
   int deactivateExpiredAds(@Param("cutoffDate") LocalDateTime cutoffDate);
+
+  @Query("SELECT a FROM AdvertisementEntity a " + "JOIN a.favoritedByUsers u "
+      + "WHERE u.email = :username AND a.active = true")
+  Set<AdvertisementEntity> findActiveFavoritesByUsername(@Param("username") String username);
 }

@@ -1,6 +1,7 @@
 package io.github.adrian.wieczorek.local_trade.controller;
 
 import io.github.adrian.wieczorek.local_trade.service.advertisement.dto.FavoriteAdvertisementDto;
+import io.github.adrian.wieczorek.local_trade.service.advertisement.service.AdvertisementFavoriteFinder;
 import io.github.adrian.wieczorek.local_trade.service.advertisement.service.FavoriteAdvertisementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,19 +20,22 @@ import java.util.UUID;
 public class FavoriteAdvertisementController {
 
   private final FavoriteAdvertisementService favoriteAdvertisementService;
+  private final AdvertisementFavoriteFinder advertisementFavoriteFinder;
 
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/me")
   public ResponseEntity<Set<FavoriteAdvertisementDto>> getMyFavoriteAdvertisements(
       @AuthenticationPrincipal UserDetails userDetails) {
-    return ResponseEntity.ok(favoriteAdvertisementService.getFavoriteAdvertisements(userDetails));
+    String email = userDetails.getUsername();
+    return ResponseEntity.ok(advertisementFavoriteFinder.getFavoriteAdvertisements(email));
   }
 
   @PostMapping("/{id}")
   @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> addToMyFavoriteAdvertisements(
       @AuthenticationPrincipal UserDetails userDetails, @PathVariable @NonNull UUID id) {
-    favoriteAdvertisementService.addFavoriteAdvertisement(userDetails, id);
+    String email = userDetails.getUsername();
+    favoriteAdvertisementService.addFavoriteAdvertisement(email, id);
     return ResponseEntity.noContent().build();
   }
 
@@ -39,7 +43,8 @@ public class FavoriteAdvertisementController {
   @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> deleteFromMyFavoriteAdvertisements(
       @AuthenticationPrincipal UserDetails userDetails, @PathVariable @NonNull UUID id) {
-    favoriteAdvertisementService.deleteFavoriteAdvertisement(userDetails, id);
+    String email = userDetails.getUsername();
+    favoriteAdvertisementService.deleteFavoriteAdvertisement(email, id);
     return ResponseEntity.noContent().build();
 
   }
