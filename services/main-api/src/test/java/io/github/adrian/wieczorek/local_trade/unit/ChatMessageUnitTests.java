@@ -7,6 +7,7 @@ import io.github.adrian.wieczorek.local_trade.service.chat.ChatMessageEntity;
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatSummaryDto;
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.UnreadCountDto;
 import io.github.adrian.wieczorek.local_trade.service.chat.mappers.ChatSummaryDtoMapper;
+import io.github.adrian.wieczorek.local_trade.service.chat.service.ChatMessageFinder;
 import io.github.adrian.wieczorek.local_trade.service.user.UsersEntity;
 import io.github.adrian.wieczorek.local_trade.service.chat.ChatMessageRepository;
 import io.github.adrian.wieczorek.local_trade.service.chat.service.ChatMessageServiceImpl;
@@ -41,6 +42,8 @@ public class ChatMessageUnitTests {
   UsersService usersService;
   @Mock
   ChatSummaryDtoMapper chatSummaryDtoMapper;
+  @InjectMocks
+  ChatMessageFinder chatMessageFinder;
 
   @Test
   public void whenSearchingForRecipientAndSenderAndSendingMessage_thenReturnChatMessage() {
@@ -104,6 +107,90 @@ public class ChatMessageUnitTests {
   }
 
   @Test
+  @DisplayName("getMessagesForMessageBox: Happy Path - should correctly map partners and unread counts")
+  public void getMessagesForMessageBox_HappyPath() {
+    UsersEntity me = UserUtils.createUserRoleUser();
+    me.setEmail("me@test.pl");
+
+    UsersEntity partner1 = UserUtils.createUserRoleUser();
+    partner1.setEmail("p1@test.pl");
+
+    UsersEntity partner2 = UserUtils.createUserRoleUser();
+    partner2.setEmail("p2@test.pl");
+
+    ChatMessageEntity msg1 =
+        ChatMessageEntity.builder().sender(partner1).recipient(me).content("Od P1").build();
+    ChatMessageEntity msg2 =
+        ChatMessageEntity.builder().sender(me).recipient(partner2).content("Do P2").build();
+
+    var countDto =
+        new io.github.adrian.wieczorek.local_trade.service.chat.dto.PartnerUnreadCountDto(partner1,
+            5L);
+
+    when(usersService.getCurrentUser(me.getEmail())).thenReturn(me);
+    when(chatMessageRepository.findLastMessagesPerConversation(me)).thenReturn(List.of(msg1, msg2));
+
+    when(chatMessageRepository.countUnreadForPartners(anyList(), eq(me)))
+        .thenReturn(List.of(countDto));
+
+    when(chatSummaryDtoMapper.toChatSummaryDto(any(), any(), anyLong()))
+        .thenReturn(Mockito.mock(ChatSummaryDto.class));
+
+    List<ChatSummaryDto> result = chatMessageFinder.getMessagesForMessageBox(me.getEmail());
+
+    assertThat(result).hasSize(2);
+
+    verify(chatSummaryDtoMapper).toChatSummaryDto(msg1, partner1, 5L);
+    verify(chatSummaryDtoMapper).toChatSummaryDto(msg2, partner2, 0L);
+  }
+
+  @Test
+  @DisplayName("getMessagesForMessageBox: Bad Path - Repository fails during bulk counting")
+  public void getMessagesForMessageBox_RepositoryFailsOnCounts() {
+    String email = "me@test.pl";
+    UsersEntity me = UserUtils.createUserRoleUser();
+    me.setEmail(email);
+
+    ChatMessageEntity msg = ChatMessageEntity.builder().sender(me).recipient(me).build();
+
+    when(usersService.getCurrentUser(email)).thenReturn(me);
+    when(chatMessageRepository.findLastMessagesPerConversation(me)).thenReturn(List.of(msg));
+
+    when(chatMessageRepository.countUnreadForPartners(anyList(), eq(me)))
+        .thenThrow(new RuntimeException("Database error during counting"));
+
+    assertThrows(RuntimeException.class, () -> chatMessageFinder.getMessagesForMessageBox(email));
+
+    verify(chatSummaryDtoMapper, never()).toChatSummaryDto(any(), any(), anyLong());
+  }
+
+  @Test
+  @DisplayName("getMessagesForMessageBox: Bad Path - User not found")
+  public void getMessagesForMessageBox_UserNotFound() {
+    String email = "nonexistent@test.pl";
+    when(usersService.getCurrentUser(email)).thenThrow(new UserNotFoundException("User not found"));
+
+    assertThrows(UserNotFoundException.class,
+        () -> chatMessageFinder.getMessagesForMessageBox(email));
+
+    verify(chatMessageRepository, never()).findLastMessagesPerConversation(any());
+  }
+
+  @Test
+  @DisplayName("getMessagesForMessageBox: Edge Case - Empty Inbox should not call count repository")
+  public void getMessagesForMessageBox_EmptyInbox() {
+    String email = "clean@test.pl";
+    UsersEntity me = UserUtils.createUserRoleUser();
+    when(usersService.getCurrentUser(email)).thenReturn(me);
+    when(chatMessageRepository.findLastMessagesPerConversation(me)).thenReturn(List.of());
+
+    List<ChatSummaryDto> result = chatMessageFinder.getMessagesForMessageBox(email);
+
+    assertThat(result).isEmpty();
+    verify(chatMessageRepository, never()).countUnreadForPartners(anyList(), any());
+  }
+
+  @Test
   public void whenPullingMessageHistory_thenReturnChatMessageHistory() {
     UsersEntity user1 = UserUtils.createUserRoleUser();
     user1.setName("Adrian");
@@ -130,7 +217,7 @@ public class ChatMessageUnitTests {
     when(chatMessageRepository.findBySenderAndRecipient(user1, user2))
         .thenReturn(conversationFromDb);
 
-    List<ChatMessageDto> result = chatMessageService.getChatHistory(userDetails, user2.getName());
+    List<ChatMessageDto> result = chatMessageFinder.getChatHistory(userDetails, user2.getName());
 
     Assertions.assertNotNull(result);
     Assertions.assertEquals(2, result.size());
@@ -156,7 +243,7 @@ public class ChatMessageUnitTests {
     when(usersService.getCurrentUser(user2.getName())).thenThrow(UserNotFoundException.class);
 
     Assertions.assertThrows(UserNotFoundException.class,
-        () -> chatMessageService.getChatHistory(userDetails, user2.getName()));
+        () -> chatMessageFinder.getChatHistory(userDetails, user2.getName()));
   }
 
   @Test
@@ -195,7 +282,7 @@ public class ChatMessageUnitTests {
     when(chatMessageRepository.findLastMessagesPerConversation(me)).thenReturn(List.of(lastMsg));
     when(chatMessageRepository.countUnreadFromPartner(partner, me)).thenReturn(1L);
 
-    chatMessageService.getInbox(me.getEmail());
+    chatMessageFinder.getInbox(me.getEmail());
 
     verify(chatSummaryDtoMapper).toChatSummaryDto(lastMsg, partner, 1L);
   }
@@ -207,7 +294,7 @@ public class ChatMessageUnitTests {
     when(usersService.getCurrentUser(me.getEmail())).thenReturn(me);
     when(chatMessageRepository.findLastMessagesPerConversation(me)).thenReturn(List.of());
 
-    List<ChatSummaryDto> result = chatMessageService.getInbox(me.getEmail());
+    List<ChatSummaryDto> result = chatMessageFinder.getInbox(me.getEmail());
 
     assertThat(result).isEmpty();
     verify(chatMessageRepository, never()).countUnreadFromPartner(any(), any());
@@ -221,7 +308,7 @@ public class ChatMessageUnitTests {
     when(usersService.getCurrentUser(fakeEmail))
         .thenThrow(new UserNotFoundException("User not found"));
 
-    assertThrows(UserNotFoundException.class, () -> chatMessageService.getInbox(fakeEmail));
+    assertThrows(UserNotFoundException.class, () -> chatMessageFinder.getInbox(fakeEmail));
     verify(chatMessageRepository, never()).findLastMessagesPerConversation(any());
   }
 
@@ -233,7 +320,7 @@ public class ChatMessageUnitTests {
     when(chatMessageRepository.findLastMessagesPerConversation(me))
         .thenThrow(new RuntimeException("DB Error"));
 
-    assertThrows(RuntimeException.class, () -> chatMessageService.getInbox(me.getEmail()));
+    assertThrows(RuntimeException.class, () -> chatMessageFinder.getInbox(me.getEmail()));
   }
 
   @Test
@@ -305,7 +392,7 @@ public class ChatMessageUnitTests {
     UnreadCountDto expectedDto = new UnreadCountDto(expectedCount);
     when(chatSummaryDtoMapper.toUnreadCountDto(expectedCount)).thenReturn(expectedDto);
 
-    UnreadCountDto result = chatMessageService.getTotalUnreadCount(email);
+    UnreadCountDto result = chatMessageFinder.getTotalUnreadCount(email);
 
     assertThat(result.totalUnread()).isEqualTo(10L);
     verify(chatMessageRepository, times(1)).countTotalUnread(me);
@@ -323,7 +410,7 @@ public class ChatMessageUnitTests {
     when(chatMessageRepository.countTotalUnread(me)).thenReturn(0L);
     when(chatSummaryDtoMapper.toUnreadCountDto(0L)).thenReturn(new UnreadCountDto(0L));
 
-    UnreadCountDto result = chatMessageService.getTotalUnreadCount(email);
+    UnreadCountDto result = chatMessageFinder.getTotalUnreadCount(email);
 
     assertThat(result.totalUnread()).isZero();
   }
@@ -336,7 +423,7 @@ public class ChatMessageUnitTests {
         .thenThrow(new UserNotFoundException("User not found"));
 
     assertThrows(UserNotFoundException.class,
-        () -> chatMessageService.getTotalUnreadCount(fakeEmail));
+        () -> chatMessageFinder.getTotalUnreadCount(fakeEmail));
 
     verify(chatMessageRepository, never()).countTotalUnread(any());
   }

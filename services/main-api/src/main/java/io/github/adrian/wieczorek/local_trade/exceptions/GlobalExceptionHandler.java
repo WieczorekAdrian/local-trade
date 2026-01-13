@@ -9,6 +9,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -75,7 +76,7 @@ public class GlobalExceptionHandler {
     ProblemDetail problemDetail =
         ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation failed");
     problemDetail.setTitle("Validation Error");
-    problemDetail.setProperty("field_errors", errors); // Dodajemy mapę błędów do standardowego pola
+    problemDetail.setProperty("field_errors", errors);
     return problemDetail;
   }
 
@@ -107,6 +108,15 @@ public class GlobalExceptionHandler {
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
         "An internal server error occurred.");
     problemDetail.setTitle("Internal Server Error");
+    return problemDetail;
+  }
+
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  public ProblemDetail handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage());
+    problemDetail.setTitle("Method Not Allowed");
+    problemDetail.setProperty("timestamp", Instant.now());
     return problemDetail;
   }
 
