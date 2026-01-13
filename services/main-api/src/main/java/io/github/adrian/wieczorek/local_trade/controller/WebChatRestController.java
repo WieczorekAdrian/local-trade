@@ -3,6 +3,7 @@ package io.github.adrian.wieczorek.local_trade.controller;
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatMessageDto;
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatSummaryDto;
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.UnreadCountDto;
+import io.github.adrian.wieczorek.local_trade.service.chat.service.ChatMessageFinder;
 import io.github.adrian.wieczorek.local_trade.service.chat.service.ChatMessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,28 +20,31 @@ import java.util.List;
 public class WebChatRestController {
 
   private final ChatMessageService chatMessageService;
+  private final ChatMessageFinder chatMessageFinder;
 
   @GetMapping("/history/{recipientName}")
   @PreAuthorize("isAuthenticated()")
   public List<ChatMessageDto> getHistory(@AuthenticationPrincipal UserDetails userDetails,
       @PathVariable String recipientName) {
-    return chatMessageService.getChatHistory(userDetails, recipientName);
+    return chatMessageFinder.getChatHistory(userDetails, recipientName);
   }
 
   @PatchMapping("/read-all/{senderEmail}")
   @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> markAsRead(@AuthenticationPrincipal UserDetails userDetails,
       @PathVariable String senderEmail) {
-    chatMessageService.markMessagesAsRead(senderEmail, userDetails.getUsername());
+    String userEmail = userDetails.getUsername();
+    chatMessageService.markMessagesAsRead(senderEmail, userEmail);
     return ResponseEntity.ok().build();
   }
 
-  @GetMapping("/inbox")
+  @Deprecated(forRemoval = true)
+  @GetMapping("/inbox/deprecated")
   @PreAuthorize("isAuthenticated()")
   public ResponseEntity<List<ChatSummaryDto>> getInbox(
       @AuthenticationPrincipal UserDetails userDetails) {
     String userEmail = userDetails.getUsername();
-    return ResponseEntity.ok(chatMessageService.getInbox(userEmail));
+    return ResponseEntity.ok(chatMessageFinder.getInbox(userEmail));
   }
 
   @GetMapping("/unread-total")
@@ -48,6 +52,14 @@ public class WebChatRestController {
   public ResponseEntity<UnreadCountDto> getTotalUnread(
       @AuthenticationPrincipal UserDetails userDetails) {
     String userEmail = userDetails.getUsername();
-    return ResponseEntity.ok(chatMessageService.getTotalUnreadCount(userEmail));
+    return ResponseEntity.ok(chatMessageFinder.getTotalUnreadCount(userEmail));
+  }
+
+  @GetMapping("/inbox")
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<List<ChatSummaryDto>> getChatMessagesForChatPage(
+      @AuthenticationPrincipal UserDetails userDetails) {
+    String userEmail = userDetails.getUsername();
+    return ResponseEntity.ok(chatMessageFinder.getMessagesForMessageBox(userEmail));
   }
 }
