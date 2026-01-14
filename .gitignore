@@ -7,7 +7,7 @@ target/
 
 # .gitignore
 .env
-!**/main-api/src/main/resources/application.properties
+
 
 ### STS ###
 .apt_generated
