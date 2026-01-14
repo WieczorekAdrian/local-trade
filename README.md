@@ -155,6 +155,7 @@ See the LICENSE file for details.
 
 [PLANNED] Azure Deployment and Storage Pivot.
 
+[PLANNED] **Full migration of the target production environment to the Azure platform (e.g., Azure App Service / AKS).**
 
 [PLANNED] AI-based Image Moderation: Integration with an external API for image moderation.
 
