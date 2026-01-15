@@ -5,29 +5,25 @@ import io.github.adrian.wieczorek.local_trade.service.advertisement.Advertisemen
 import io.github.adrian.wieczorek.local_trade.service.category.CategoryRepository;
 import io.github.adrian.wieczorek.local_trade.service.chat.ChatMessageRepository;
 import io.github.adrian.wieczorek.local_trade.service.user.UsersRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
-import java.util.List;
 
 @SpringBootTest
 @ActiveProfiles("test")
 public abstract class AbstractIntegrationTest extends SharedContainerInitializer {
 
-    @Autowired
-    ChatMessageRepository chatMessageRepository;
-    @Autowired
-    UsersRepository usersRepository;
-    @Autowired
-    AdvertisementRepository advertisementRepository;
-    @Autowired
-    CategoryRepository categoryRepository;
+  @Autowired
+  ChatMessageRepository chatMessageRepository;
+  @Autowired
+  UsersRepository usersRepository;
+  @Autowired
+  AdvertisementRepository advertisementRepository;
+  @Autowired
+  CategoryRepository categoryRepository;
 
   @DynamicPropertySource
   static void registerPgProperties(DynamicPropertyRegistry registry) {
