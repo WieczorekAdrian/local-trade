@@ -46,6 +46,10 @@ public class WebChatFinderIntegrationTests extends AbstractIntegrationTest {
 
   @BeforeEach
   public void setup() {
+    chatMessageRepository.deleteAllInBatch();
+    advertisementRepository.deleteAllInBatch();
+    categoryRepository.deleteAllInBatch();
+    usersRepository.deleteAllInBatch();
     UsersEntity sender = UserUtils.createUserRoleUser();
     UsersEntity recipient = UserUtils.createUserRoleUser();
     sender.setName("Tomek");
