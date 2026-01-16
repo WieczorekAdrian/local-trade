@@ -21,6 +21,7 @@ It supports user listings, messaging, ratings, and media management — designed
 - **Maven** – build and dependency management  
 - **Docker & Docker Compose** – containerized deployment  
 - **GitHub Actions** – CI/CD pipeline
+- **Code Quality:** Qodana, Jacoco, **Spotless (Automated Code Formatting)**
 
 
 ## Core Features
