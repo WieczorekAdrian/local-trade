@@ -22,6 +22,7 @@ public class UsersEntity extends BaseAuditableEntity implements UserDetails {
   private String name;
 
   @Email
+  @Column(unique = true, nullable = false)
   private String email;
   private String password;
   private String role = "ROLE_USER";
