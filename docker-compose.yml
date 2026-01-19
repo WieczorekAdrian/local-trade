@@ -15,6 +15,18 @@ services:
     env_file:
       - .env
 
+
+  k6:
+      image: grafana/k6:latest
+      volumes:
+        - ./performance-tests/scripts:/scripts
+      command: run /scripts/main-suite.js
+      networks:
+        - local-trade-net
+      profiles:
+        - testing
+
+
   rabbitmq:
     image: rabbitmq:3.13-management
     container_name: rabbitmq

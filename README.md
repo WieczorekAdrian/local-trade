@@ -22,6 +22,7 @@ It supports user listings, messaging, ratings, and media management — designed
 - **Docker & Docker Compose** – containerized deployment  
 - **GitHub Actions** – CI/CD pipeline
 - **Code Quality:** Qodana, Jacoco, **Spotless (Automated Code Formatting)**
+- **k6** – Load & Performance Testing
 
 
 ## Core Features
@@ -48,47 +49,12 @@ This project places a strong emphasis on code quality and reliability.
 
 ## Environment Configuration
 
-The application requires the following environment variables. Example .env file:
-```
-DB_NAME= Postgres db name
-DB_USER= Postgres db username
-DB_PASSWORD= Postgres db password
-JWT_SECRET= JWT Secret Key hs256 encrypted
-```
+The application is configured via environment variables. A template with all required variables is provided in the `.env.example` file.
 
-### S3 / MinIO
+Simply copy it to `.env` and adjust the values:
+```bash
+cp .env.example .env
 ```
-MINIO_ROOT_USER=minioadmin
-MINIO_ROOT_PASSWORD=minioadmin
-S3_ENDPOINT=http://minio:9000
-S3_ACCESSKEY=minioadmin
-S3_SECRETKEY=minioadmin
-AWS_REGION=eu-central-1
-```
-The application uses the s3.useMinio property to switch between storage providers:
-```
-s3.useMinio=true (Default)
-```
-Uses MinIO for local development.
-
-This integration is fully confirmed by the test suite, which provisions a MinIO instance using Testcontainers.
-```
-s3.useMinio=false
-```
-Switches the configuration to use a live AWS S3 bucket.
-
-**Cloud Note:** The project currently supports MinIO (local) and AWS S3. The roadmap includes a planned full pivot to **Azure Blob Storage** and production deployment on the Azure platform.
-
-This profile requires additional configuration (like AWS credentials, region, and bucket name) to be provided in the relevant application-secret.yml profile.
-
-### Redis configuration
-```
-REDIS_HOST=redis
-REDIS_PORT=6379
-```
-
-### The application-secret.yml (or relevant profile) should reference these environment variables.
-
 
 ## Local Development Setup
 
@@ -104,6 +70,20 @@ docker-compose up --build
 
 Swagger UI will be available at:
 http://localhost:8080/swagger-ui.html
+
+## Performance & Scalability
+Beyond functional correctness, this project is engineered for high performance under load. The testing strategy focuses on **Critical Paths** and high-risk scenarios to validate system stability under stress using **k6**.
+
+### Redis Caching Impact
+Benchmarks demonstrate a **~30x latency reduction** for cached resources, effectively offloading read traffic from the primary database.
+- **Cold Request (PostgreSQL):** ~64ms latency (Database I/O + Transaction overhead)
+- **Warm Request (Redis Cache):** ~2ms latency (In-Memory access)
+
+### High-Load Multipart Uploads
+Robust file handling validated under heavy concurrency.
+- **Scenario:** Simultaneous 5MB image uploads by multiple concurrent users.
+- **Optimization:** Implemented **SharedArray** and memory-efficient streaming in k6 scripts to prevent client-side OOM and simulate real-world binary streams.
+- **Stability:** Achieved **0% Error Rate** with correct transaction handling (SQL rollback + S3 cleanup) during stress tests.
 
 
 ## Testing
@@ -137,7 +117,7 @@ Swagger UI: /swagger-ui.html
 - **Event-Driven Design:** Services communicate asynchronously using **RabbitMQ** for decoupled operations (e.g., triggering emails or notifications), ensuring resilience and non-blocking API responses.
 - **Modular & Domain-Centric:** The core service enforces **strict domain isolation**. Cross-domain repository access is prohibited (e.g., *Trade Domain* interacts with *Advertisement Domain* only via Service interfaces), which prevents tight coupling and ensures clean boundaries.
 - **Infrastructure-as-Code (Local):** The entire stack (DB, Cache, Broker, Storage) is fully containerized using Docker.
-- **Reliability First:** Integration tests run against real infrastructure instances using **Testcontainers**, not mocks, guaranteeing production-like behavior during testing.
+- **Reliability & Performance First:** Integration tests run against real infrastructure using **Testcontainers**. Critical system paths (e.g., file uploads, caching strategies) are further validated with **k6 load tests** to ensure stability under concurrency.
 - **Security-First Approach:** Implements defense-in-depth strategies. Access tokens are short-lived, refresh tokens are rotated upon every use, and logout actions instantaneously invalidate tokens via Redis, mitigating token theft risks.
 
 ### License

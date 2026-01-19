@@ -1,5 +1,7 @@
 package io.github.adrian.wieczorek.local_trade.security;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,15 +22,13 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
+@RequiredArgsConstructor
 public class SecurityConfiguration {
   private final AuthenticationProvider authenticationProvider;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-  public SecurityConfiguration(JwtAuthenticationFilter jwtAuthenticationFilter,
-      AuthenticationProvider authenticationProvider) {
-    this.authenticationProvider = authenticationProvider;
-    this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-  }
+  @Value("${allowed.interceptor.origins}")
+  private String allowedOrigins;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -36,7 +36,7 @@ public class SecurityConfiguration {
     http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .csrf(AbstractHttpConfigurer::disable)
         .authorizeHttpRequests(authorize -> authorize
-            .requestMatchers("/auth/**", "auth/refreshToken", "/filter", "/image/**",
+            .requestMatchers("/auth/**", "/auth/refreshToken", "/filter", "/image/**",
                 "/advertisements/search/**", "/ws/**", "/swagger-ui/**", "/swagger-ui.html",
                 "/v3/api-docs/**", "/v3/api-docs", "/v2/api-docs", "/swagger-resources",
                 "/swagger-resources/**", "/configuration/ui", "/configuration/security",
@@ -58,8 +58,7 @@ public class SecurityConfiguration {
   @Bean
   CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(
-        List.of("http://localhost:8080", "http://localhost:5173", "http://192.168.1.127:5173"));
+    configuration.setAllowedOrigins(List.of(allowedOrigins.split(",")));
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(List.of("*"));
     configuration.setAllowCredentials(true);

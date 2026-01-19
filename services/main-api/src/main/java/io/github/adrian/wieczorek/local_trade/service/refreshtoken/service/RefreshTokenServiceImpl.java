@@ -3,7 +3,6 @@ package io.github.adrian.wieczorek.local_trade.service.refreshtoken.service;
 import io.github.adrian.wieczorek.local_trade.exceptions.UserLogOutException;
 import io.github.adrian.wieczorek.local_trade.security.JwtService;
 import io.github.adrian.wieczorek.local_trade.service.refreshtoken.dto.RefreshTokenRequest;
-import io.github.adrian.wieczorek.local_trade.exceptions.UserNotFoundException;
 import io.github.adrian.wieczorek.local_trade.service.refreshtoken.RefreshTokenEntity;
 import io.github.adrian.wieczorek.local_trade.service.user.UsersEntity;
 import io.github.adrian.wieczorek.local_trade.service.refreshtoken.RefreshTokenRepository;
@@ -57,7 +56,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
           return LoginResponse.builder().token(newAccessToken)
               .refreshToken(newRefreshToken.getToken()).build();
-        }).orElseThrow(() -> new UserNotFoundException("Refresh token not found or revoked"));
+        }).orElseThrow(() -> new UserLogOutException("Refresh token not found or revoked"));
   }
 
   @Override
