@@ -4,6 +4,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
@@ -17,6 +18,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +32,7 @@ public class GlobalExceptionHandler {
     ProblemDetail problemDetail =
         ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
     problemDetail.setTitle("Authentication Failure");
-    problemDetail.setProperty("error_code", "BAD_CREDENTIALS"); // Opcjonalne własne pola
+    problemDetail.setProperty("error_code", "BAD_CREDENTIALS");
     return problemDetail;
   }
 
@@ -43,7 +45,19 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                ex.getMessage()
+        );
 
+        problemDetail.setTitle("Data Integrity Violation");
+        problemDetail.setType(URI.create("DataIntegrityViolation"));
+        problemDetail.setProperty("timestamp", Instant.now());
+
+        return problemDetail;
+    }
 
   @ExceptionHandler({AccessDeniedException.class, AccountStatusException.class,
       SignatureException.class, ExpiredJwtException.class})
@@ -135,9 +149,9 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(MaxUploadSizeExceededException.class)
   public ProblemDetail handleMaxUploadSize(MaxUploadSizeExceededException ex) {
     ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.PAYLOAD_TOO_LARGE,
-        "Przesłane pliki są zbyt duże.");
+        "Files are too large");
 
-    problemDetail.setTitle("Przekroczono limit wysyłania");
+    problemDetail.setTitle("File Too Large");
     problemDetail.setProperty("timestamp", Instant.now());
     problemDetail.setProperty("maxFileSize", "10MB");
     problemDetail.setProperty("maxRequestSize", "50MB");
