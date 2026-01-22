@@ -45,19 +45,17 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.CONFLICT,
-                ex.getMessage()
-        );
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
 
-        problemDetail.setTitle("Data Integrity Violation");
-        problemDetail.setType(URI.create("DataIntegrityViolation"));
-        problemDetail.setProperty("timestamp", Instant.now());
+    problemDetail.setTitle("Data Integrity Violation");
+    problemDetail.setType(URI.create("DataIntegrityViolation"));
+    problemDetail.setProperty("timestamp", Instant.now());
 
-        return problemDetail;
-    }
+    return problemDetail;
+  }
 
   @ExceptionHandler({AccessDeniedException.class, AccountStatusException.class,
       SignatureException.class, ExpiredJwtException.class})
@@ -148,8 +146,8 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(MaxUploadSizeExceededException.class)
   public ProblemDetail handleMaxUploadSize(MaxUploadSizeExceededException ex) {
-    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.PAYLOAD_TOO_LARGE,
-        "Files are too large");
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.PAYLOAD_TOO_LARGE, "Files are too large");
 
     problemDetail.setTitle("File Too Large");
     problemDetail.setProperty("timestamp", Instant.now());
