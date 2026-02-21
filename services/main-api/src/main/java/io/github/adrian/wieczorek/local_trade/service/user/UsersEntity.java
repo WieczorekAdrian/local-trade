@@ -4,7 +4,8 @@ import io.github.adrian.wieczorek.local_trade.service.advertisement.Advertisemen
 import io.github.adrian.wieczorek.local_trade.service.audit.BaseAuditableEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -12,7 +13,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.*;
 
-@Data
+@Getter
+@Setter
 @Entity
 public class UsersEntity extends BaseAuditableEntity implements UserDetails {
 

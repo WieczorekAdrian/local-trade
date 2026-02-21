@@ -16,7 +16,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -71,14 +72,13 @@ public class AdvertisementEntity {
   public boolean equals(Object o) {
     if (this == o)
       return true;
-    if (o == null || getClass() != o.getClass())
+    if (!(o instanceof AdvertisementEntity that))
       return false;
-    AdvertisementEntity that = (AdvertisementEntity) o;
-    return Objects.equals(id, that.id);
+    return advertisementId != null && advertisementId.equals(that.getAdvertisementId());
   }
 
   @Override
   public int hashCode() {
-    return id != null ? id.hashCode() : getClass().hashCode();
+    return advertisementId.hashCode();
   }
 }
