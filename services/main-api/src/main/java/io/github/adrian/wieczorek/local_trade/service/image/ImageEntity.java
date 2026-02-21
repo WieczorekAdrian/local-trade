@@ -2,16 +2,15 @@ package io.github.adrian.wieczorek.local_trade.service.image;
 
 import io.github.adrian.wieczorek.local_trade.service.advertisement.AdvertisementEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "images")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class ImageEntity {

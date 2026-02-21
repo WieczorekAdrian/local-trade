@@ -2,15 +2,13 @@ package io.github.adrian.wieczorek.local_trade.service.refreshtoken;
 
 import io.github.adrian.wieczorek.local_trade.service.user.UsersEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.Instant;
 
 @Entity
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @Builder
 @NoArgsConstructor
