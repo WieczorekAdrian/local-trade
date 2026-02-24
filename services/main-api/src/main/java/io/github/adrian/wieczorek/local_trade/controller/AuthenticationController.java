@@ -82,11 +82,13 @@ public class AuthenticationController {
     String accessToken = (String) request.getAttribute("jwt.token");
     authenticationService.logout(accessToken, refreshToken);
 
-    ResponseCookie cleanAccess = ResponseCookie.from("accessToken", "").httpOnly(true)
-        .secure(isCookieSecure).path("/").maxAge(0).build();
+    ResponseCookie cleanAccess =
+        ResponseCookie.from("accessToken", "").httpOnly(true).secure(isCookieSecure).path("/")
+            .maxAge(0).sameSite(isCookieSecure ? "None" : "Lax").build();
 
-    ResponseCookie cleanRefresh = ResponseCookie.from("refreshToken", "").httpOnly(true)
-        .secure(isCookieSecure).path("/auth/refreshToken").maxAge(0).build();
+    ResponseCookie cleanRefresh =
+        ResponseCookie.from("refreshToken", "").httpOnly(true).secure(isCookieSecure)
+            .path("/auth/refreshToken").maxAge(0).sameSite(isCookieSecure ? "None" : "Lax").build();
 
     return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cleanAccess.toString())
         .header(HttpHeaders.SET_COOKIE, cleanRefresh.toString()).build();
