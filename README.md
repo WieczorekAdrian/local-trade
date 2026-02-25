@@ -1,12 +1,20 @@
 [![CI Build Status](https://img.shields.io/github/actions/workflow/status/WieczorekAdrian/local-trade/build-and-test.yml?branch=main&style=for-the-badge)](https://github.com/WieczorekAdrian/local-trade/actions)
-[![Test Coverage](https://img.shields.io/badge/coverage-88%25-brightgreen?style=for-the-badge)](https://shields.io)
+[![Test Coverage](https://img.shields.io/badge/coverage-80+%25-brightgreen?style=for-the-badge)](https://shields.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Java 17](https://img.shields.io/badge/Java-17-blue.svg?style=for-the-badge)](https://www.java.com)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-brightgreen.svg?style=for-the-badge)](https://spring.io/projects/spring-boot)
+[![Live Demo - Frontend](https://img.shields.io/badge/Live_Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://local-trade-frontend.vercel.app)
+[![Swagger API](https://img.shields.io/badge/API_Docs-Swagger-85EA2D?style=for-the-badge&logo=swagger)](https://local-trade.francecentral.cloudapp.azure.com/swagger-ui.html)
 # local-trade: Backend API Platform
 
 A full-featured Spring Boot backend REST API for a local advertisement trading platform.
 It supports user listings, messaging, ratings, and media management — designed for scalability and real-world deployment.
+
+## Live Deployment & Performance
+The platform is fully deployed and operational. 
+
+**Infrastructure Highlight:** The entire backend stack (Spring Boot, PostgreSQL, Redis, RabbitMQ, MinIO) is successfully hosted on a cost-effective, low-resource cloud instance (Azure B1). 
+Despite strict hardware limits, aggressive **Redis caching** and **asynchronous RabbitMQ processing** allow the API to maintain exceptional performance, dropping latency from ~64ms (cold DB read) to **~2ms** for cached queries.
 
 ## Tech Stack
 - **Java 17**
@@ -41,7 +49,7 @@ It supports user listings, messaging, ratings, and media management — designed
 ## Testing & Quality Assurance
 This project places a strong emphasis on code quality and reliability.
 
-- 88% Code Test Coverage (verified by Jacoco).
+- 80%+ Code Test Coverage (verified by Jacoco).
 - Over 200 unit and integration tests.
 - Testcontainers are used for full end-to-end integration tests with real instances of PostgreSQL, Redis, MinIO, and RabbitMQ in isolated containers.
 - CI/CD Pipeline (GitHub Actions) automatically builds and tests the application on every commit.
@@ -96,8 +104,6 @@ mvn test
 
 This command automatically provisions PostgreSQL, Redis, and MinIO containers for the integration test suite.
 
-## API Documentation
-
 ### API documentation is available via the following endpoints:
 Swagger UI: /swagger-ui.html
 , OpenAPI v3 Specification: /v3/api-docs
@@ -120,30 +126,18 @@ Swagger UI: /swagger-ui.html
 - **Reliability & Performance First:** Integration tests run against real infrastructure using **Testcontainers**. Critical system paths (e.g., file uploads, caching strategies) are further validated with **k6 load tests** to ensure stability under concurrency.
 - **Security-First Approach:** Implements defense-in-depth strategies. Access tokens are short-lived, refresh tokens are rotated upon every use, and logout actions instantaneously invalidate tokens via Redis, mitigating token theft risks.
 
-### License
-This project is licensed under the MIT License.
-See the LICENSE file for details.
+##  Project Roadmap
 
-### Project Roadmap
+### Completed
+* **Core Backend Architecture:** Domain-centric Spring Boot API with isolated services.
+* **Event-Driven Messaging:** RabbitMQ integration for async notifications.
+* **Frontend Client:** Fully responsive SPA built with React, Vite, and TypeScript.
+* **Cloud Infrastructure:** Containerized deployment (Docker Compose) on Azure cloud.
+* **Advanced Security:** Stateless JWT authentication with HttpOnly cookies, Reverse Proxy CORS bypass, and Redis token blacklisting.
 
-[IN PROGRESS] Frontend Development: Building a modern, responsive UI using React, Vite, and TypeScript.
-
-[IN PROGRESS] Dynamic Filters: Implementing a fully dynamic, category-specific filtering system (similar to OLX/Allegro) using JSONB attributes in the database.
-
-[IN PROGRESS] User Dashboard: Creating an aggregated BFF (Backend-for-Frontend) endpoint for the user dashboard.
-
-[PLANNED] Adding user notification preferences.
-
-[PLANNED] Azure Deployment and Storage Pivot.
-
-[PLANNED] **Full migration of the target production environment to the Azure platform (e.g., Azure App Service / AKS).**
-
-[PLANNED] AI-based Image Moderation: Integration with an external API for image moderation.
-
-[PLANNED] **Social-Marketplace Pivot:** Transitioning into a Social Commerce platform. 
-  - Implementation of a **Global Feed** combining advertisements with social posts.
-  - Enhanced User Profiles featuring professional history and social proof (LinkedIn-style).
-  - Advanced social interactions (likes, shares, following system).
+### In Progress / Planned
+* **Dynamic Filters:** Implementing a fully dynamic, category-specific filtering system using JSONB attributes in PostgreSQL.
+* **AI-based Image Moderation:** Automated scanning of uploaded advertisements.
 
 # Contributing to Local Trade Platform
 
@@ -159,6 +153,10 @@ Hi! I'm happy you want to contribute. This is a portfolio project, but I treat i
 ## Requirements
 - Java 17
 - Docker (for Testcontainers)
+
+### License
+This project is licensed under the MIT License.
+See the LICENSE file for details.
 
 ## Author
 

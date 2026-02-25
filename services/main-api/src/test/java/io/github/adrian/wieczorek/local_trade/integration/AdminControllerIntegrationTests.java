@@ -3,6 +3,7 @@ package io.github.adrian.wieczorek.local_trade.integration;
 import io.github.adrian.wieczorek.local_trade.service.user.UsersEntity;
 import io.github.adrian.wieczorek.local_trade.service.user.UsersRepository;
 import io.github.adrian.wieczorek.local_trade.testutils.UserUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -30,6 +31,11 @@ public class AdminControllerIntegrationTests extends AbstractIntegrationTest {
   private MockMvc mockMvc;
   @Autowired
   UsersRepository usersRepository;
+
+  @BeforeEach
+  void setUp() {
+    usersRepository.deleteAll();
+  }
 
   @Test
   @WithMockUser(value = "testadmin@test.com", roles = "ADMIN")
