@@ -14,6 +14,8 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.UnsupportedEncodingException;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -26,7 +28,7 @@ public class EmailServiceImpl implements EmailService {
   private String userProfileLink;
   @Value("${spring.mail.username: placeholder}")
   private String fromEmail;
-  @Value("${advertisement.link: placeholder}")
+  @Value("${advertisementEntity.link: placeholder}")
   private String advertisementUrl;
 
   @Override
@@ -44,7 +46,11 @@ public class EmailServiceImpl implements EmailService {
       MimeMessage mimeMessage = mailSender.createMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
 
-      helper.setFrom(fromEmail);
+      try {
+        helper.setFrom(fromEmail, "Local Trade Team");
+      } catch (UnsupportedEncodingException e) {
+        helper.setFrom(fromEmail);
+      }
       helper.setTo(toEmail);
       helper.setSubject("Your advertisement is ready and up " + userName + "!");
 
@@ -56,7 +62,7 @@ public class EmailServiceImpl implements EmailService {
 
     } catch (MessagingException | MailException e) {
       log.error("Error when sending email to: with error: {}: {}", toEmail, e.getMessage());
-      throw new EmailNotSendException("Error when sending email" + toEmail, e);
+      throw new EmailNotSendException("Error when sending email " + toEmail, e);
     }
   }
 
@@ -70,16 +76,20 @@ public class EmailServiceImpl implements EmailService {
     try {
       MimeMessage mimeMessage = mailSender.createMimeMessage();
       MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
-      helper.setFrom(fromEmail);
+      try {
+        helper.setFrom(fromEmail, "Local Trade Team");
+      } catch (UnsupportedEncodingException e) {
+        helper.setFrom(fromEmail);
+      }
       helper.setTo(toEmail);
-      helper.setSubject("Welcome to Local Trade" + userName + "!");
+      helper.setSubject("Welcome to Local Trade " + userName + "!");
       helper.setText(htmlBody, true);
       mailSender.send(mimeMessage);
       log.info("Successfully sent welcome email to: {}", toEmail);
     } catch (MessagingException | MailException e) {
       log.error("Error when sending welcoming email to: with error: {}: {}", toEmail,
           e.getMessage());
-      throw new EmailNotSendException("Error when sending email" + toEmail, e);
+      throw new EmailNotSendException("Error when sending email " + toEmail, e);
     }
   }
 }

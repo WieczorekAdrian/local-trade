@@ -7,48 +7,49 @@
         body {
             font-family: 'Arial', sans-serif;
             line-height: 1.6;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
-            background-color: #F5F1EB; /* Beżowe tło */
+            padding: 20px;
+            background-color: #f8faf9;
         }
         .container {
             width: 90%;
             max-width: 600px;
+            margin: 40px auto;
             padding: 30px;
-            border: 1px solid #6B4F3E; /* Ciemny brąz (border) */
+            border: 2px solid #28a745;
             border-radius: 20px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.05);
             background-color: #FFFFFF;
         }
         .header {
-            font-size: 24px;
-            color: #2E2E2E; /* Ciemny tekst */
+            font-size: 26px;
+            color: #1e7e34;
             text-align: center;
+            margin-bottom: 20px;
         }
         .content {
-            margin-top: 20px;
             text-align: center;
             color: #2E2E2E;
         }
         .button {
             display: inline-block;
-            padding: 12px 20px;
-            margin-top: 20px;
-            background-color: #885a1f; /* Brązowy przycisk */
-            color: #FFFFFF;
+            padding: 14px 25px;
+            margin-top: 25px;
+            background-color: #28a745;
+            color: #FFFFFF !important;
             text-decoration: none;
-            border-radius: 5px;
+            border-radius: 8px;
+            font-weight: bold;
         }
         .button:hover {
-            background-color: #6B4F3E;
+            background-color: #218838;
         }
         .footer {
-            margin-top: 30px;
-            font-size: 12px;
-            color: #6B4F3E;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            font-size: 13px;
+            color: #1e7e34;
             text-align: center;
         }
     </style>
@@ -60,15 +61,15 @@
     </h1>
 
     <div class="content">
-        <p>
-            Welcome to Local Trade! We are thrilled to have you join us.
-            Your account is now active.
+        <p style="font-size: 16px;">
+            Welcome to <strong>Local Trade</strong>! We are thrilled to have you join our community.
+            Your account is now active and ready to go.
         </p>
-        <a th:href="${userProfileLink}" class="button" style="color: #FFFFFF;">Go to your profile</a>
+        <a th:href="${userProfileLink}" class="button">Go to your profile</a>
     </div>
 
     <div class="footer">
-        <p>Thank you,<br>The Local Trade Team</p>
+        <p>Thank you for choosing us,<br><strong>The Local Trade Team</strong></p>
     </div>
 </div>
 </body>
