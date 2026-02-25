@@ -7,48 +7,53 @@
         body {
             font-family: 'Arial', sans-serif;
             line-height: 1.6;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
-            background-color: #F5F1EB;
+            padding: 20px;
+            background-color: #f8faf9;
         }
         .container {
             width: 90%;
             max-width: 600px;
+            margin: 40px auto;
             padding: 30px;
-            border: 1px solid #6B4F3E;
+            border: 2px solid #28a745;
             border-radius: 20px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.05);
             background-color: #FFFFFF;
         }
         .header {
             font-size: 24px;
-            color: #2E2E2E;
+            color: #1e7e34;
             text-align: center;
+            margin-bottom: 20px;
         }
         .content {
-            margin-top: 20px;
             text-align: center;
             color: #2E2E2E;
+        }
+        .ad-title {
+            font-weight: bold;
+            color: #28a745;
         }
         .button {
             display: inline-block;
-            padding: 12px 20px;
-            margin-top: 20px;
-            background-color: #885a1f;
-            color: #FFFFFF;
+            padding: 14px 25px;
+            margin-top: 25px;
+            background-color: #28a745;
+            color: #FFFFFF !important;
             text-decoration: none;
-            border-radius: 5px;
+            border-radius: 8px;
+            font-weight: bold;
         }
         .button:hover {
-            background-color: #0056b3;
+            background-color: #218838;
         }
         .footer {
-            margin-top: 30px;
-            font-size: 12px;
-            color: #6B4F3E;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            font-size: 13px;
+            color: #1e7e34;
             text-align: center;
         }
     </style>
@@ -60,14 +65,16 @@
     </h1>
 
     <div class="content">
-        <p>
-            Your advertisementEntity:  <span th:text="${adTitle}">[Title]</span> is added and can be viewed.
+        <p style="font-size: 16px;">
+            Great news! Your advertisement: <br>
+            <span class="ad-title" th:text="${adTitle}">[Title]</span> <br>
+            has been successfully added and is now live.
         </p>
-        <a th:href="${advertisementUrl}" class="button">Go to your advertisementEntity</a>
+        <a th:href="${advertisementUrl}" class="button">View your advertisement</a>
     </div>
 
     <div class="footer">
-        <p>Many thanks,<br>Local Trade Team</p>
+        <p>Many thanks,<br><strong>The Local Trade Team</strong></p>
     </div>
 </div>
 </body>
