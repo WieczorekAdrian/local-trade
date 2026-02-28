@@ -11,10 +11,17 @@ A full-featured Spring Boot backend REST API for a local advertisement trading p
 It supports user listings, messaging, ratings, and media management — designed for scalability and real-world deployment.
 
 ## Live Deployment & Performance
-The platform is fully deployed and operational. 
 
-**Infrastructure Highlight:** The entire backend stack (Spring Boot, PostgreSQL, Redis, RabbitMQ, MinIO) is successfully hosted on a cost-effective, low-resource cloud instance (Azure B1). 
-Despite strict hardware limits, aggressive **Redis caching** and **asynchronous RabbitMQ processing** allow the API to maintain exceptional performance, dropping latency from ~64ms (cold DB read) to **~2ms** for cached queries.
+The platform is fully deployed and operational.
+
+**Infrastructure Highlight & Low-Resource Optimization:**
+The entire backend stack (Spring Boot, PostgreSQL, Redis, RabbitMQ, MinIO) is successfully hosted on a highly constrained, cost-effective cloud instance (**Azure B1s - 1 vCPU, 1GB RAM**). To guarantee system stability and sub-100ms response times under such strict hardware limits, several low-level optimizations were implemented:
+
+* **Container Tuning:** Swapped standard Debian-based Docker images for lightweight **Alpine Linux / Amazon Corretto** distributions.
+* **Resource Orchestration:** Implemented strict Docker Compose memory limits to prevent out-of-memory (OOM) kills and guarantee database stability.
+* **Aggressive Caching:** Redis caching and asynchronous RabbitMQ processing allow the API to drop latency from ~64ms (cold DB read) to **~2ms** for cached queries.
+* **Cold-Start Elimination:** Configured custom OS-level cron keep-alive scripts and optimized Linux `swappiness` to prevent the hypervisor from paging JVM memory to disk during idle periods.
+* **Reverse Proxy & SSL Termination:** Nginx serves as the single entry point for the platform. It handles full HTTPS encryption, manages CORS policies for the Vercel-hosted frontend, and securely routes traffic to the internal Docker network, keeping the underlying Spring Boot application and databases shielded from direct public access.
 
 ## Tech Stack
 - **Java 17**
