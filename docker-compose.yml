@@ -1,7 +1,11 @@
 services:
   postgres-db:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: local-trade-db
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
@@ -28,8 +32,12 @@ services:
 
 
   rabbitmq:
-    image: rabbitmq:3.13-management
+    image: rabbitmq:3.13-management-alpine
     container_name: rabbitmq
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     hostname: rabbitmq
     ports:
       - "5672:5672"
@@ -47,6 +55,10 @@ services:
   minio-storage:
     image: "minio/minio:latest"
     container_name: local-trade-minio
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -67,6 +79,10 @@ services:
   redis-cache:
     image: "redis:7-alpine"
     container_name: local-trade-redis
+    deploy:
+      resources:
+        limits:
+          memory: 64M
     ports:
       - "6379:6379"
     volumes:
@@ -80,6 +96,10 @@ services:
       context: .
       dockerfile: ./services/notification-service/Dockerfile
     container_name: notification-service
+    deploy:
+      resources:
+        limits:
+          memory: 250M
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -94,6 +114,10 @@ services:
       context: .
       dockerfile: ./services/main-api/Dockerfile
     container_name: main-api
+    deploy:
+      resources:
+        limits:
+          memory: 400M
     environment:
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/${DB_NAME}
