@@ -13,7 +13,8 @@ COPY services/notification-service/src services/notification-service/src
 
 RUN mvn clean package -DskipTests -pl services/notification-service -am
 
-FROM eclipse-temurin:17-jre-jammy
+FROM amazoncorretto:17-alpine
 WORKDIR /app
 COPY --from=builder /app/services/notification-service/target/*.jar app.jar
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENV JAVA_OPTS="-XX:TieredStopAtLevel=1 -XX:+UseSerialGC"
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
