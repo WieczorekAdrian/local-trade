@@ -60,6 +60,13 @@ public class JwtService {
     return listOfRoles;
   }
 
+  public String generateWebSocketTicket(String email) {
+    return Jwts.builder().setSubject(email)
+        .setIssuedAt(new java.util.Date(System.currentTimeMillis()))
+        .setExpiration(new java.util.Date(System.currentTimeMillis() + 30000))
+        .signWith(getSignInKey(), io.jsonwebtoken.SignatureAlgorithm.HS256).compact();
+  }
+
   public long getExpirationTime() {
     return jwtExpiration;
   }
