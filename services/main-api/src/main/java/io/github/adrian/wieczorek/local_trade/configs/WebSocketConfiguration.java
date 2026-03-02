@@ -1,9 +1,12 @@
 package io.github.adrian.wieczorek.local_trade.configs;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -11,10 +14,19 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer {
+
+  @Bean
+  public TaskScheduler customWebSocketTaskScheduler() {
+    ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+    scheduler.setPoolSize(1);
+    scheduler.setThreadNamePrefix("ws-heartbeat-thread-");
+    return scheduler;
+  }
+
   private final CookieHandshakeInterceptor cookieHandshakeInterceptor;
 
-  @Value("${allowed.interceptor.origins}")
-  private String allowedInterceptorOrigins;
+  @Value("${allowed.websocket.origins}")
+  private String allowedWebsocketOrigins;
 
   public WebSocketConfiguration(CookieHandshakeInterceptor cookieHandshakeInterceptor) {
     this.cookieHandshakeInterceptor = cookieHandshakeInterceptor;
@@ -23,13 +35,14 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
   @Override
   public void configureMessageBroker(@NonNull MessageBrokerRegistry registry) {
     registry.setApplicationDestinationPrefixes("/app");
-    registry.enableSimpleBroker("/topic", "/queue");
+    registry.enableSimpleBroker("/topic", "/queue").setTaskScheduler(customWebSocketTaskScheduler())
+        .setHeartbeatValue(new long[] {10000, 10000});
     registry.setUserDestinationPrefix("/user");
   }
 
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
-    registry.addEndpoint("/ws").setAllowedOrigins(allowedInterceptorOrigins.split(","))
+    registry.addEndpoint("/ws").setAllowedOriginPatterns(allowedWebsocketOrigins.split(","))
         .addInterceptors(cookieHandshakeInterceptor)
         .setHandshakeHandler(new CustomHandshakeHandler());
   }
