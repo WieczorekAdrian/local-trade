@@ -1,9 +1,11 @@
 package io.github.adrian.wieczorek.local_trade.configs;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
@@ -13,6 +15,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor
 public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer {
 
   @Bean
@@ -23,14 +26,11 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
     return scheduler;
   }
 
-  private final CookieHandshakeInterceptor cookieHandshakeInterceptor;
+  private final UserChannelInterceptor userChannelInterceptor;
 
   @Value("${allowed.websocket.origins}")
   private String allowedWebsocketOrigins;
 
-  public WebSocketConfiguration(CookieHandshakeInterceptor cookieHandshakeInterceptor) {
-    this.cookieHandshakeInterceptor = cookieHandshakeInterceptor;
-  }
 
   @Override
   public void configureMessageBroker(@NonNull MessageBrokerRegistry registry) {
@@ -42,8 +42,11 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
 
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
-    registry.addEndpoint("/ws").setAllowedOriginPatterns(allowedWebsocketOrigins.split(","))
-        .addInterceptors(cookieHandshakeInterceptor)
-        .setHandshakeHandler(new CustomHandshakeHandler());
+    registry.addEndpoint("/ws").setAllowedOriginPatterns(allowedWebsocketOrigins.split(","));
+  }
+
+  @Override
+  public void configureClientInboundChannel(ChannelRegistration registration) {
+    registration.interceptors(userChannelInterceptor);
   }
 }
