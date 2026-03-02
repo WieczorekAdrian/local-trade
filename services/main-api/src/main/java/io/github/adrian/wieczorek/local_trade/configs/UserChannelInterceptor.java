@@ -29,15 +29,21 @@ public class UserChannelInterceptor implements ChannelInterceptor {
   public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
     StompHeaderAccessor accessor =
         MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+
     if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-      String token = accessor.getFirstNativeHeader("Authorization");
-      if (token != null && token.startsWith("Bearer ")) {
-        token = token.substring(7);
-        String email = jwtService.extractUsername(token);
-        UserDetails user = usersRepository.findByEmail(email)
-            .orElseThrow(() -> new UserNotFoundException("Access Denied"));
-        accessor
-            .setUser(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+      String ticket = accessor.getFirstNativeHeader("ws-ticket");
+
+      if (ticket != null) {
+        try {
+          String email = jwtService.extractUsername(ticket);
+          UserDetails user = usersRepository.findByEmail(email)
+              .orElseThrow(() -> new UserNotFoundException("Access Denied"));
+
+          accessor
+              .setUser(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+        } catch (Exception e) {
+          System.err.println("Nieważny lub przeterminowany bilet WS: " + e.getMessage());
+        }
       }
     }
     return message;

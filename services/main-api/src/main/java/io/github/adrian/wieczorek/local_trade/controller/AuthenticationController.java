@@ -1,5 +1,6 @@
 package io.github.adrian.wieczorek.local_trade.controller;
 
+import io.github.adrian.wieczorek.local_trade.security.JwtService;
 import io.github.adrian.wieczorek.local_trade.service.user.dto.LoginDto;
 import io.github.adrian.wieczorek.local_trade.service.refreshtoken.dto.RefreshTokenRequest;
 import io.github.adrian.wieczorek.local_trade.service.user.dto.RegisterUsersDto;
@@ -18,6 +19,8 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ public class AuthenticationController {
   private final AuthenticationService authenticationService;
   private final RefreshTokenService refreshTokenService;
   private final LoginFacade loginFacade;
+  private final JwtService jwtService;
 
   @Value("${isCookieSecure}")
   private boolean isCookieSecure;
@@ -92,5 +96,21 @@ public class AuthenticationController {
 
     return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cleanAccess.toString())
         .header(HttpHeaders.SET_COOKIE, cleanRefresh.toString()).build();
+  }
+
+  @GetMapping("/ws-ticket")
+  public ResponseEntity<Map<String, String>> getWebSocketTicket(
+      @CookieValue(value = "accessToken", required = false) String accessToken) {
+    if (accessToken == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+    try {
+      String jwtUsername = jwtService.extractUsername(accessToken);
+      String ticket = jwtService.generateWebSocketTicket(jwtUsername);
+
+      return ResponseEntity.ok(Map.of("ticket", ticket));
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
   }
 }
