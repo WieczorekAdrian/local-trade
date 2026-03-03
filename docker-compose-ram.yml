@@ -1,0 +1,130 @@
+services:
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: local-trade-db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - local-trade-net
+    env_file:
+      - .env
+
+
+  k6:
+    image: grafana/k6:latest
+    volumes:
+      - ./performance-tests/scripts:/scripts
+    command: run /scripts/main-suite.js
+    networks:
+      - local-trade-net
+    profiles:
+      - testing
+
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - local-trade-net
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "check_running" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  minio-storage:
+    image: "minio/minio:latest"
+    container_name: local-trade-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    networks:
+      local-trade-net:
+        aliases:
+          - minio
+    restart: unless-stopped
+    env_file:
+      - .env
+
+  redis-cache:
+    image: "redis:7-alpine"
+    container_name: local-trade-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - local-trade-net
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: ./services/notification-service/Dockerfile
+    container_name: notification-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - local-trade-net
+    restart: on-failure
+    env_file:
+      - .env
+
+  main-api:
+    build:
+      context: .
+      dockerfile: ./services/main-api/Dockerfile
+    container_name: main-api
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis-cache
+      REDIS_PORT: 6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres-db:
+        condition: service_started
+      redis-cache:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - local-trade-net
+    env_file:
+      - .env
+
+volumes:
+  rabbitmq_data:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  local-trade-net:
+    driver: bridge

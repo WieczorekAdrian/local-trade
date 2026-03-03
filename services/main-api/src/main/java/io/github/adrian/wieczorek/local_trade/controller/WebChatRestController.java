@@ -7,6 +7,7 @@ import io.github.adrian.wieczorek.local_trade.service.chat.service.ChatMessageFi
 import io.github.adrian.wieczorek.local_trade.service.chat.service.ChatMessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,6 +22,7 @@ public class WebChatRestController {
 
   private final ChatMessageService chatMessageService;
   private final ChatMessageFinder chatMessageFinder;
+  private final SimpMessagingTemplate simpMessagingTemplate;
 
   @GetMapping("/history/{recipientName}")
   @PreAuthorize("isAuthenticated()")
@@ -34,7 +36,12 @@ public class WebChatRestController {
   public ResponseEntity<Void> markAsRead(@AuthenticationPrincipal UserDetails userDetails,
       @PathVariable String senderEmail) {
     String userEmail = userDetails.getUsername();
+
     chatMessageService.markMessagesAsRead(senderEmail, userEmail);
+
+    simpMessagingTemplate.convertAndSendToUser(senderEmail.toLowerCase(), "/queue/read-receipts",
+        userEmail);
+
     return ResponseEntity.ok().build();
   }
 
