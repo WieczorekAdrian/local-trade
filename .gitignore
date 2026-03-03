@@ -8,7 +8,7 @@ target/
 # .gitignore
 .env
 /node_modules
-
+docker-compose-ram.yml
 
 ### STS ###
 .apt_generated

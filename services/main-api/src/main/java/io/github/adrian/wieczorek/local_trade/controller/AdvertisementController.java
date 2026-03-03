@@ -68,7 +68,8 @@ public class AdvertisementController {
   @PreAuthorize("isAuthenticated()")
   @PostMapping("/new")
   public ResponseEntity<ResponseAdvertisementDto> addWholeAdvertisement(
-      @RequestPart RequestAdvertisementDto advertisementDto, @RequestPart List<MultipartFile> files,
+      @RequestPart RequestAdvertisementDto advertisementDto,
+      @RequestPart(required = false) List<MultipartFile> files,
       @AuthenticationPrincipal UserDetails userDetails) throws IOException {
     return ResponseEntity
         .ok(newAdvertisementFacade.addWholeAdvertisement(advertisementDto, files, userDetails));

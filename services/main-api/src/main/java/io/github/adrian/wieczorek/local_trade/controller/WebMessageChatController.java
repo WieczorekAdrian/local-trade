@@ -5,6 +5,7 @@ import io.github.adrian.wieczorek.local_trade.service.chat.dto.ChatMessagePayloa
 import io.github.adrian.wieczorek.local_trade.service.chat.ChatMessageEntity;
 import io.github.adrian.wieczorek.local_trade.service.chat.dto.TypingDto;
 import io.github.adrian.wieczorek.local_trade.service.chat.service.ChatMessageService;
+import io.github.adrian.wieczorek.local_trade.service.user.UsersEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -12,6 +13,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 
@@ -32,10 +34,14 @@ public class WebMessageChatController {
 
   @MessageMapping("/chat.typing/{recipientEmail}")
   public void handleTyping(@DestinationVariable String recipientEmail, @Payload TypingDto input,
-      Principal principal) {
-    TypingDto status = new TypingDto(principal.getName(), input.isTyping());
-    simpMessagingTemplate.convertAndSendToUser(recipientEmail.toLowerCase(), "/queue/typing",
-        status);
+      Authentication authentication) {
+    if (authentication != null && authentication.getPrincipal() instanceof UsersEntity users) {
+      TypingDto status = new TypingDto(users.getEmail(), input.isTyping());
+      simpMessagingTemplate.convertAndSendToUser(recipientEmail.toLowerCase(), "/queue/typing",
+          status);
+    } else {
+      System.out.println("Invalid principal type");
+    }
   }
 
   @MessageMapping("/chat.sendMessage.private/{recipient}")
