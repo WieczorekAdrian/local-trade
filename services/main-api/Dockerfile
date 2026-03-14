@@ -16,5 +16,7 @@ RUN mvn clean package -DskipTests -pl services/main-api -am
 FROM amazoncorretto:17-alpine
 WORKDIR /app
 COPY --from=builder /app/services/main-api/target/*.jar app.jar
-ENV JAVA_OPTS="-XX:TieredStopAtLevel=1 -XX:+UseSerialGC"
+
+ENV JAVA_OPTS="-Xms512m -Xmx512m -XX:+AlwaysPreTouch -XX:+UseSerialGC"
+
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
