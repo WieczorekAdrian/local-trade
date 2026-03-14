@@ -13,6 +13,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NotificationDispatcher {
 
+  // noinspection MismatchedQueryAndUpdateOfCollection
   private final List<NotificationHandler> handlers;
 
   public void dispatch(NotificationEvent notificationEvent) {

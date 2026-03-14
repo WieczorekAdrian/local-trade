@@ -5,6 +5,7 @@ import io.github.adrian.wieczorek.local_trade.service.user.UsersEntity;
 import io.github.adrian.wieczorek.local_trade.service.advertisement.AdvertisementEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -32,9 +33,11 @@ public class TradeEntity {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "advertisement_id")
   private AdvertisementEntity advertisementEntity;
+  @NotNull
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "seller_id")
   private UsersEntity seller;
+  @NotNull
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "buyer_id")
   private UsersEntity buyer;
